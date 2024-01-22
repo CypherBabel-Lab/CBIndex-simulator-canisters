@@ -1,0 +1,19 @@
+[package]
+name = "vault-factory"
+version.workspace = true
+edition.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+ic-cdk-timers = "0.1" # Feel free to remove this dependency if you don't need timers
+
+candid = "0.8"
+serde = "1.0"
+thiserror = "1.0"
+canister-sdk = { workspace = true, features = ["factory"] }
+ic-exports = { workspace = true }
+ic-stable-structures = { workspace = true  }

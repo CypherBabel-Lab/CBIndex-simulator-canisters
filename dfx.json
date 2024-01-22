@@ -1,0 +1,53 @@
+{
+  "canisters": {
+    "token_factory": {
+      "build": "bash scripts/build.sh",
+      "candid": "src/candid/token-factory.did",
+      "wasm": "target/wasm32-unknown-unknown/release/factory.wasm",
+      "type": "custom"
+    },
+    "token": {
+      "build": "bash scripts/build.sh",
+      "candid": "src/candid/token.did",
+      "wasm": "target/wasm32-unknown-unknown/release/token.wasm",
+      "type": "custom"
+    },
+    "vault": {
+      "build": "bash scripts/build.sh",
+      "candid": "src/candid/vault.did",
+      "wasm": "target/wasm32-unknown-unknown/release/vault.wasm",
+      "type": "custom"
+    },
+    "icp_ledger_canister": {
+      "type": "custom",
+      "candid": "https://raw.githubusercontent.com/dfinity/ic/087190165198a9dc7b3c9cf80e0812c0c03964c6/rs/rosetta-api/icp_ledger/ledger.did",
+      "wasm": "https://download.dfinity.systems/ic/087190165198a9dc7b3c9cf80e0812c0c03964c6/canisters/ledger-canister.wasm.gz",
+      "remote": {
+        "id": {
+          "ic": "ryjl3-tyaaa-aaaaa-aaaba-cai"
+        }
+      }
+    },
+    "cbindex_frontend": {
+      "dependencies": [
+        "cbindex_backend"
+      ],
+      "frontend": {
+        "entrypoint": "src/cbindex_frontend/src/index.html"
+      },
+      "source": [
+        "src/cbindex_frontend/assets",
+        "dist/cbindex_frontend/"
+      ],
+      "type": "assets"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}

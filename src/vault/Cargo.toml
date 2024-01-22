@@ -1,0 +1,22 @@
+[package]
+name = "vault"
+version.workspace = true
+edition.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
+[features]
+default = []
+export-api = ["canister-sdk/metrics-api"]
+
+[dependencies]
+thiserror = "1.0"
+
+canister-sdk = { workspace = true, features = ["factory"] }
+ic-exports = { workspace = true }
+ic-stable-structures = { workspace = true  }
+serde = "1.0"
+candid = "0.8"
+
+token = { path = "../token/api", package = "is20-token" }

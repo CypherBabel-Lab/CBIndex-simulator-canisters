@@ -1,0 +1,63 @@
+type FactoryError = variant {
+  CanisterCreateFailed : text;
+  GenericError : text;
+  AccessDenied;
+  StableStorageError : text;
+  NotFound;
+  LedgerError : text;
+  CanisterWasmNotSet;
+  StateLocked;
+  ManagementError : text;
+  NotEnoughIcp : record { nat64; nat64 };
+  NotEnoughCycles : record { nat64; nat64 };
+};
+type Metadata = record {
+  fee : nat;
+  decimals : nat8;
+  fee_to : principal;
+  owner : principal;
+  name : text;
+  is_test_token : opt bool;
+  symbol : text;
+};
+type Result = variant { Ok : principal; Err : TokenFactoryError };
+type Result_1 = variant { Ok; Err : TokenFactoryError };
+type Result_2 = variant { Ok : nat32; Err : FactoryError };
+type Result_3 = variant {
+  Ok : vec record { principal; UpgradeResult };
+  Err : FactoryError;
+};
+type Result_4 = variant { Ok : text; Err : FactoryError };
+type Result_5 = variant { Ok : nat64; Err : FactoryError };
+type Result_6 = variant { Ok; Err : FactoryError };
+type TokenFactoryError = variant {
+  FactoryError : FactoryError;
+  AlreadyExists;
+  InvalidConfiguration : record { text; text };
+};
+type UpgradeResult = variant { Error : text; Noop; Upgraded };
+service : (principal, opt principal) -> {
+  cmc_principal : () -> (principal) query;
+  get_all : () -> (vec principal) query;
+  get_checksum : () -> (Result_4) query;
+  get_controller : () -> (principal) query;
+  get_cycles : (opt principal) -> (opt nat);
+  get_icp_fee : () -> (nat64) query;
+  get_icp_to : () -> (principal) query;
+  get_ledger_account_id : () -> (text) query;
+  length : () -> (nat64) query;
+  refund_icp : () -> (Result_5);
+  reset_update_lock : () -> (Result_6);
+  set_cmc_principal : (principal) -> (Result_6);
+  set_controller : (principal) -> (Result_6);
+  set_icp_fee : (nat64) -> (Result_6);
+  set_icp_to : (principal) -> (Result_6);
+  top_up : () -> (nat64);
+  version : () -> (Result_2) query;
+  create_token : (Metadata, nat, opt principal) -> (Result);
+  forget_token : (text) -> (Result_1);
+  get_token : (text) -> (opt principal) query;
+  pkg_version : () -> (text) query;
+  set_token_bytecode : () -> (Result_2);
+  upgrade : () -> (Result_3);
+}

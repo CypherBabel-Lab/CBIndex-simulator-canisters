@@ -1,0 +1,36 @@
+type Result = variant { Ok; Err : VaultError };
+type TxError = variant {
+  SelfTransfer;
+  NothingToClaim;
+  AccountNotFound;
+  Duplicate : record { duplicate_of : nat64 };
+  BadFee : record { expected_fee : nat };
+  Unauthorized;
+  CreatedInFuture : record { ledger_time : nat64 };
+  TooOld : record { allowed_window_nanos : nat64 };
+  AmountOverflow;
+  InsufficientFunds : record { balance : nat };
+  AmountTooSmall;
+};
+type VaultConfig = record {
+  deploy_time : nat64;
+  owner : principal;
+  name : text;
+  supported_tokens : vec principal;
+  symbol : text;
+  shares_token : principal;
+};
+type VaultError = variant {
+  SharesTokenError : TxError;
+  InvalidConfiguration : record { text; text };
+  AssetNotSupported;
+};
+type VaultLedger = record { tokens : opt vec principal };
+service : (VaultConfig) -> {
+  deposit : (principal, nat64) -> (Result);
+  get_aum : () -> (nat64) query;
+  get_config : () -> (VaultConfig) query;
+  get_ledger : () -> (VaultLedger) query;
+  get_nav : () -> (nat64) query;
+  pkg_version : () -> (text) query;
+}

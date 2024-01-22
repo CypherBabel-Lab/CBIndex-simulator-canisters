@@ -1,0 +1,21 @@
+[package]
+name = "is20-token-canister"
+version.workspace = true
+edition.workspace = true
+
+[features]
+default = []
+export-api = ["token-api/export-api","canister-sdk/metrics-api"]
+
+[dependencies]
+candid = "0.8"
+serde = "1.0"
+canister-sdk = { workspace = true, features = ["auction"] }
+ic-exports = { workspace = true }
+token-api = { path = "../api", package = "is20-token", features = ["auction", "claim"] }
+
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+async-std = {version = "1.10.0", features = ["attributes"]}
+
+[dev-dependencies]
+coverage-helper = "0.1"

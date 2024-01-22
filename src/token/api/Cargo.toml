@@ -1,0 +1,39 @@
+[package]
+name = "is20-token"
+version.workspace = true
+edition.workspace = true
+
+[features]
+default = ["mint_burn", "transfer"]
+export-api = ["canister-sdk/auction-api"]
+
+# Enables cycle auctions
+auction = ["canister-sdk/auction"]
+
+# Enables claim API related functions
+claim = []
+
+# Enables mint and burn API methods. Enabled by default.
+mint_burn = []
+
+# Enables API methods for funds transferring. Enabled by default.
+transfer = []
+
+[dependencies]
+candid = "0.8"
+num-traits = "0.2"
+serde = "1.0"
+serde_cbor = "0.11"
+canister-sdk = { workspace = true}
+ic-stable-structures = { workspace = true }
+ic-exports = { workspace = true }
+thiserror = "1.0"
+
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+async-std = { version = "1.10.0", features = ["attributes"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt"] }
+proptest = "1.0.0"
+rand = "0.8"
+coverage-helper = "0.1"
