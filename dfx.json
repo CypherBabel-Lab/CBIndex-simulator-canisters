@@ -50,7 +50,7 @@
   },
   "networks": {
     "local": {
-      "bind": "192.168.0.47:4943",
+      "bind": "127.0.0.1:4943",
       "type": "ephemeral"
     },
     "ic": {

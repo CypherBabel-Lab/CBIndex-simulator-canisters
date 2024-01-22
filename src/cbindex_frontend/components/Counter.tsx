@@ -10,8 +10,9 @@ const Counter = () => {
 
   const refreshCounter = async () => {
     console.log(counter)
-    // const freshCount = await counter.getValue() as bigint
-    // setCount(freshCount)
+    const freshCount = await counter.get_aum() as bigint
+    console.log(freshCount)
+    setCount(freshCount)
   }
 
   const increment = async () => {
