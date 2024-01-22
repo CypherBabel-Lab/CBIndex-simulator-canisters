@@ -1,0 +1,204 @@
+:root {
+    color-scheme: dark;
+
+    /* layout */
+    --width-min: 340px;
+    /* the minimum width of the page */
+    --pc-width-max: 1440px;
+    /* the maximum width of the page for pc */
+    --mobile-width-max: 1024px;
+    /* the maximum width of the page for mobile */
+
+    /* color */
+    --primary-green: #50f6bf;
+    /* the primary green color */
+    --positive-change-green: #39b37e;
+    /* the green color used for positive changes */
+    --negative-change-red: #f23838;
+    /* the red color used for negative changes */
+
+    /* button color */
+    --button-green: #54db85;
+    /* the green color used for buttons */
+    --button-blue: #4486f1;
+    /* the blue color used for buttons */
+    --max-button-red: #db5462;
+    /* the red color used for max buttons */
+    --max-button-purple: #a644f1;
+    /* the purple color used for max buttons */
+    --cancel-button-blue: #4e51eb;
+    /* the blue color used for cancel buttons */
+    --cancel-button-purple: #5500c4;
+    /* the purple color used for cancel buttons */
+
+    /* background colors */
+    --bg-main-color: #181a1e;
+    /* the main background of each page */
+    --bg-second-color: #1e2026;
+    /* the second background, used for large panels rgb(30, 32, 38), gray */
+
+    --bg--third-color: #25272f;
+    /* the third background, used for cards */
+    --bg-third-hover-color: #2c2e38;
+    /* the secondary background when hover */
+    --bg-third-color: #343641;
+    /* the third background */
+
+    /* text colors */
+    --text-main-color: var(--primary-green);
+    /* the main text color, primary green */
+    --text-second-color: white;
+    /* the second text color, white */
+    --text-third-color: #76808f;
+    /* the third text color, gray */
+
+    /* border colors */
+    --border-main-color: var(--primary-green);
+    /* the main border color, primary green */
+    --border-second-color: white;
+    /* the second border color, white */
+    --border-third-color: #76808f;
+    /* the third border color, gray   */
+    --border-fourth-color: #333;
+    /* the fourth border color, dark gray */
+
+    /* padding */
+    --padding-lg: 30px;
+    --padding-md: 20px;
+    --padding-sm: 10px;
+
+    /* margin */
+    --margin-lg: 30px;
+    --margin-md: 20px;
+    --margin-sm: 10px;
+    --margin-xs: 4px;
+
+    /* border radius */
+    --border-radius-lg: 30px;
+    --border-radius-md: 20px;
+    --border-radius-sm: 10px;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+        "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+        sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color: #424242;
+}
+
+a {
+    color: var(--text-third-color);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--text-second-color);
+}
+
+button {
+    font-weight: 600;
+}
+
+.slogan {
+    font-size: 1.7em;
+    margin-bottom: 0;
+}
+
+.twitter {
+    font-size: 0.4em;
+}
+
+.App-logo {
+    height: 14vmin;
+    pointer-events: none;
+    transform: scale(1);
+    animation: pulse 3s infinite;
+}
+
+.App-header {
+    height: calc(100vh - 70px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(10px + 2vmin);
+}
+
+.examples {
+    padding: 30px 100px;
+    display: grid;
+    grid-gap: 30px;
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+.examples-title {
+    font-size: 1.3em;
+    margin-bottom: 0;
+    text-align: center;
+}
+
+.example {
+    padding: 50px 50px;
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    /*border: 1px solid black;*/
+    /*background: #f4f4f4;*/
+    border-radius: 15px;
+}
+
+.example-disabled {
+    font-size: 1.3em;
+    color: #9e9e9e;
+}
+
+.demo-button {
+    background: #a02480;
+    padding: 0 1.3em;
+    margin-top: 1em;
+    border-radius: 60px;
+    font-size: 0.7em;
+    height: 35px;
+    outline: 0;
+    border: 0;
+    cursor: pointer;
+    color: white;
+}
+
+.demo-button:active {
+    color: white;
+    background: #979799;
+}
+
+.auth-section {
+    padding: 1em;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    text-align: right;
+    position: fixed;
+    top: 0;
+    right: 0;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(0.97);
+        opacity: 0;
+    }
+
+    70% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(0.97);
+        opacity: 0;
+    }
+}

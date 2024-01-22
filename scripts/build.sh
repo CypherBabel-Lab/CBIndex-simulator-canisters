@@ -1,4 +1,3 @@
-set -e
 cargo build --target wasm32-unknown-unknown --package is20-token-canister --features export-api --release
 ic-wasm target/wasm32-unknown-unknown/release/is20-token-canister.wasm -o target/wasm32-unknown-unknown/release/token.wasm shrink
 cargo build --target wasm32-unknown-unknown --package token-factory --features export-api --release
