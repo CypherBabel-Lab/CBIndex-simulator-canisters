@@ -11,6 +11,7 @@ pub struct VaultConfig {
     pub deploy_time: u64,
     pub supported_tokens: Vec<Principal>,
     pub shares_token: Principal,
+    pub exchange_rate_canister: Principal,
 }
 
 impl Default for VaultConfig {
@@ -22,6 +23,7 @@ impl Default for VaultConfig {
             deploy_time: 0,
             supported_tokens: vec![],
             shares_token: Principal::anonymous(),
+            exchange_rate_canister: Principal::anonymous(),
         }
     }
 }

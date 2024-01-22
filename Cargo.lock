@@ -1861,7 +1861,7 @@ dependencies = [
  "ic-ledger-core",
  "ic-stable-structures 0.5.4",
  "icp-ledger",
- "icrc-ledger-types",
+ "icrc-ledger-types 0.1.0",
  "ledger-canister",
 ]
 
@@ -1941,7 +1941,7 @@ dependencies = [
  "ic-crypto-sha",
  "ic-ledger-canister-core",
  "ic-ledger-core",
- "icrc-ledger-types",
+ "icrc-ledger-types 0.1.0",
  "num-traits",
  "serde",
  "serde_bytes",
@@ -1958,7 +1958,7 @@ dependencies = [
  "ic-base-types",
  "ic-icrc1",
  "ic-ledger-core",
- "icrc-ledger-types",
+ "icrc-ledger-types 0.1.0",
  "num-traits",
  "serde",
 ]
@@ -1980,7 +1980,7 @@ dependencies = [
  "ic-icrc1",
  "ic-icrc1-ledger",
  "ic-metrics-encoder",
- "icrc-ledger-types",
+ "icrc-ledger-types 0.1.0",
  "num-traits",
  "scopeguard",
  "serde",
@@ -2006,7 +2006,7 @@ dependencies = [
  "ic-ledger-canister-core",
  "ic-ledger-core",
  "ic-metrics-encoder",
- "icrc-ledger-types",
+ "icrc-ledger-types 0.1.0",
  "num-traits",
  "serde",
  "serde_bytes",
@@ -2055,7 +2055,7 @@ dependencies = [
  "ic-crypto-sha",
  "ic-ic00-types",
  "ic-utils",
- "icrc-ledger-types",
+ "icrc-ledger-types 0.1.0",
  "num-traits",
  "serde",
  "serde_bytes",
@@ -2104,7 +2104,7 @@ dependencies = [
  "ic-metrics-encoder",
  "ic-nns-constants",
  "icp-ledger",
- "icrc-ledger-types",
+ "icrc-ledger-types 0.1.0",
  "json5",
  "maplit",
  "priority-queue",
@@ -2348,7 +2348,7 @@ dependencies = [
  "ic-icrc1",
  "ic-ledger-canister-core",
  "ic-ledger-core",
- "icrc-ledger-types",
+ "icrc-ledger-types 0.1.0",
  "lazy_static",
  "on_wire",
  "prost",
@@ -2361,6 +2361,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "icrc"
+version = "0.1.0"
+source = "git+https://github.com/pramitgaha/icrc.git#c5ad06e05cc52992334686ce5277c9a858c31906"
+dependencies = [
+ "async-trait",
+ "candid 0.8.4",
+ "ic-cdk 0.9.2",
+ "icrc-ledger-types 0.1.4",
+ "serde",
+]
+
+[[package]]
 name = "icrc-ledger-types"
 version = "0.1.0"
 source = "git+https://github.com/dfinity/ic?rev=4824fd13586f1be43ea842241f22ee98f98230d0#4824fd13586f1be43ea842241f22ee98f98230d0"
@@ -2368,6 +2380,22 @@ dependencies = [
  "candid 0.8.4",
  "ciborium",
  "hex",
+ "num-traits",
+ "serde",
+ "serde_bytes",
+ "sha2 0.10.8",
+]
+
+[[package]]
+name = "icrc-ledger-types"
+version = "0.1.4"
+source = "git+https://github.com/dfinity/ic#45503d9cc289df90ce0a517b86d72ba427bf27ca"
+dependencies = [
+ "base32",
+ "candid 0.10.2",
+ "crc32fast",
+ "hex",
+ "num-bigint",
  "num-traits",
  "serde",
  "serde_bytes",
@@ -2604,7 +2632,7 @@ dependencies = [
  "ic-ledger-core",
  "ic-metrics-encoder",
  "icp-ledger",
- "icrc-ledger-types",
+ "icrc-ledger-types 0.1.0",
  "intmap",
  "lazy_static",
  "num-traits",
@@ -4104,6 +4132,7 @@ dependencies = [
  "canister-sdk",
  "ic-exports",
  "ic-stable-structures 0.3.56",
+ "icrc",
  "is20-token",
  "serde",
  "thiserror",

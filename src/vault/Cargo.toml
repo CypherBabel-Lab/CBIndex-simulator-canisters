@@ -20,3 +20,4 @@ serde = "1.0"
 candid = "0.8"
 
 token = { path = "../token/api", package = "is20-token" }
+icrc = { git = "https://github.com/pramitgaha/icrc.git" }
