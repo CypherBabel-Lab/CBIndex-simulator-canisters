@@ -12,6 +12,7 @@ export-api = ["canister-sdk/metrics-api"]
 
 [dependencies]
 thiserror = "1.0"
+async-trait = "0.1.68"
 
 canister-sdk = { workspace = true, features = ["factory"] }
 ic-exports = { workspace = true }
@@ -20,4 +21,3 @@ serde = "1.0"
 candid = "0.8"
 
 token = { path = "../token/api", package = "is20-token" }
-icrc = { git = "https://github.com/pramitgaha/icrc.git" }

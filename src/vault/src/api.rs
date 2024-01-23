@@ -1,5 +1,6 @@
 use std::{rc::Rc, cell::RefCell};
 
+use candid::Nat;
 use ic_exports::{candid::Principal, ic_cdk};
 use canister_sdk::{
     ic_canister::{
@@ -68,13 +69,13 @@ impl VaultCanister {
     }
 
     #[query]
-    pub fn get_aum(&self) -> u64 {
-        VaultLedger::get_stable().get_aum()
+    pub async fn get_aum(&self) -> Nat {
+        VaultLedger::get_stable().get_aum().await
     }
 
     #[query]
-    pub fn get_nav(&self) -> u64 {
-        VaultLedger::get_stable().get_nav()
+    pub async fn get_nav(&self) -> Nat {
+        VaultLedger::get_stable().get_nav().await
     }
 
     #[update]

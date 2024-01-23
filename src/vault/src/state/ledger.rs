@@ -1,20 +1,20 @@
 use std::{cell::RefCell, borrow::Cow};
 
-use candid::{Principal, CandidType,Deserialize, Encode, Decode};
+use candid::{Principal, CandidType,Deserialize, Encode, Decode, Nat};
 use ic_stable_structures::{MemoryId,StableCell,Storable};
-use icrc::icrc2::Icrc2Token;
 use crate::exchange_rate:: {
     AssetClass,
     Asset,
-    ExchangeRate,
-    ExchangeRateMetadata,
-    ExchangeRateError,
     GetExchangeRateRequest,
     GetExchangeRateResult,
     Service,
 };
 
 use crate:: state::config::VaultConfig;
+use crate:: icrc::icrc1::Icrc1;
+use crate:: icrc::icrc2;
+use crate:: icrc::utils;
+use crate:: Account;
 #[derive(Deserialize, CandidType, Clone, Debug)]
 pub struct VaultLedger {
     pub tokens: Option<Vec<Principal>>,
@@ -50,15 +50,16 @@ impl VaultLedger {
             .expect("unable to set vault ledger to stable memory")
     }
 
-    pub fn get_aum(&self) -> u64 {
+    pub async fn get_aum(&self) -> Nat {
         match self.tokens.clone() {
             Some(tokens) => {
-                let mut aum = 0;
+                let mut aum = Nat::from(0);
                 for token in tokens {
-                    let icrc = Icrc2Token::new(token);
-                    let symbol = icrc.icrc1_symbol();
-                    let balance = icrc.icrc1_balance_of();
-                    let exchange_rate = Service::new(VaultConfig::get_stable().exchange_rate_canister.clone()).get_exchange_rate(GetExchangeRateRequest{
+                    let icrc = icrc2::Icrc2Token::new(token);
+                    let symbol = icrc.icrc1_symbol().await.unwrap().0;
+                    let decimals_token = icrc.icrc1_decimals().await.unwrap().0;
+                    let balance = icrc.icrc1_balance_of(utils::account_transformer(Account::from(VaultConfig::get_stable().owner))).await.unwrap().0;
+                    let exchange_rate_result = Service::new(VaultConfig::get_stable().exchange_rate_canister.clone()).get_exchange_rate(GetExchangeRateRequest{
                         timestamp: None,
                         quote_asset: Asset{
                             class: AssetClass::Cryptocurrency,
@@ -68,27 +69,34 @@ impl VaultLedger {
                             class: AssetClass::FiatCurrency,
                             symbol: "USD".to_string(),
                         },
-                    });
-                    match exchange_rate {
-                        Ok((GetExchangeRateResult{exchange_rate: ExchangeRate{rate, ..}, ..},)) => {
-                            aum += rate * balance;
+                    }).await.unwrap().0;
+                    match exchange_rate_result {
+                        GetExchangeRateResult::Ok(exchange_rate) => {
+                            let rate = exchange_rate.rate;
+                            let decimals = exchange_rate.metadata.decimals;
+                            let exchange_rate = rate / 10u64.pow(decimals);
+                            let balance = balance / 10u64.pow(decimals_token.into());
+                            aum = aum + balance * exchange_rate;
                         },
-                        _ => {},
+                        GetExchangeRateResult::Err(_) => {
+                            continue;
+                        }
+                        
                     }
                 }
+                aum
             },
-            None => 0,
-            
+            None => Nat::from(0),
         }
     }
 
-    pub fn get_nav(&self) -> u64 {
-        let aum = self.get_aum();
+    pub async fn get_nav(&self) -> Nat {
+        let aum = self.get_aum().await;
         let shares_token = VaultConfig::get_stable().shares_token;
-        let icrc = Icrc2Token::new(shares_token);
-        let total_supply = icrc.icrc1_total_supply();
-        if total_supply == 0 {
-            0
+        let icrc = icrc2::Icrc2Token::new(shares_token);
+        let total_supply = icrc.icrc1_total_supply().await.unwrap().0;
+        if total_supply == Nat::from(0){
+            Nat::from(0)
         } else {
             aum / total_supply
         }

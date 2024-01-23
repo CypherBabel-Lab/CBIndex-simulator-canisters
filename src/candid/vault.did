@@ -16,6 +16,7 @@ type VaultConfig = record {
   deploy_time : nat64;
   owner : principal;
   name : text;
+  exchange_rate_canister : principal;
   supported_tokens : vec principal;
   symbol : text;
   shares_token : principal;
@@ -28,9 +29,9 @@ type VaultError = variant {
 type VaultLedger = record { tokens : opt vec principal };
 service : (VaultConfig) -> {
   deposit : (principal, nat64) -> (Result);
-  get_aum : () -> (nat64) query;
+  get_aum : () -> (nat) query;
   get_config : () -> (VaultConfig) query;
   get_ledger : () -> (VaultLedger) query;
-  get_nav : () -> (nat64) query;
+  get_nav : () -> (nat) query;
   pkg_version : () -> (text) query;
 }
