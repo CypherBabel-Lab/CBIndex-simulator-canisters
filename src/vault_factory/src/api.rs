@@ -160,19 +160,14 @@ impl VaultFactoryCanister {
         }
 
         let caller = canister_sdk::ic_kit::ic::caller();
-        let mut info2 = info.clone();
-        // set to icrc2
-        info2.feature_flags = Some(FeatureFlags {
-            icrc2: true,
-        });
-        self.set_canister_code(TOKEN_WASM.to_vec())?;
-        let shares_token_principal = self
-            .create_canister((info2,), controller, Some(caller))
-            .await?;
+        // self.set_canister_code(TOKEN_WASM.to_vec())?;
+        // let shares_token_principal = self
+        //     .create_canister((info.clone(),), controller, Some(caller))
+        //     .await?;
         let vault_config = VaultConfig {
             owner: caller,
             exchange_rate_canister: exchange_rate_canister.unwrap_or(DEFAULT_EXCHANGE_RATE_CANISTER),
-            shares_token: shares_token_principal,
+            shares_token: caller,
             name: info.token_name,
             symbol: info.token_symbol,
             supported_tokens,
