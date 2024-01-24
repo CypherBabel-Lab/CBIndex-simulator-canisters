@@ -1,26 +1,30 @@
-use std::{rc::Rc, cell::RefCell};
+pub mod error;
+pub mod api;
+pub mod icrc;
+pub mod state;
+pub use state::State;
+pub use api::*;
 
-use candid::Principal;
-use canister_sdk::{
-    ic_canister::{
-        Canister, PreUpdate, MethodType
-    }, 
-    ic_metrics::{MetricsStorage, Metrics}, ic_storage
-};
+#[cfg(feature = "export-api")]
+#[no_mangle]
+pub static VAULT_FACTORY_CANISTER_MARKER: &str = "VAULT_FACTORY_CANISTER";
 
-#[derive(Clone, Canister)]
-pub struct VaultFactoryCanister {
-    #[id]
-    principal: Principal,
-}
+pub fn idl() -> String {
+    use crate::error::VaultFactoryError;
+    use canister_sdk::{
+        ic_canister::{generate_idl, Idl},
+        ic_factory::{
+            api::{FactoryCanister, UpgradeResult},
+            error::FactoryError,
+        },
+    };
+    use ic_exports::Principal;
+    use std::collections::HashMap;
+    use crate::icrc::*;
 
-impl Metrics for VaultFactoryCanister {
-    fn metrics(&self) -> Rc<RefCell<MetricsStorage>> {
-        <MetricsStorage as ic_storage::IcStorage>::get()
-    }
-}
-impl PreUpdate for VaultFactoryCanister {
-    fn pre_update(&self, _method_name: &str, _method_type: MethodType) {
-        self.update_metrics();
-    }
+    let canister_idl = generate_idl!();
+    let mut factory_idl = <VaultFactoryCanister as FactoryCanister>::get_idl();
+    factory_idl.merge(&canister_idl);
+
+    candid::bindings::candid::compile(&factory_idl.env.env, &Some(factory_idl.actor))
 }

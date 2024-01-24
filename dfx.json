@@ -3,13 +3,19 @@
     "token_factory": {
       "build": "bash scripts/build.sh",
       "candid": "src/candid/token-factory.did",
-      "wasm": "target/wasm32-unknown-unknown/release/factory.wasm",
+      "wasm": "target/wasm32-unknown-unknown/release/token-factory.wasm",
       "type": "custom"
     },
     "token": {
       "build": "bash scripts/build.sh",
       "candid": "src/candid/token.did",
       "wasm": "target/wasm32-unknown-unknown/release/token.wasm",
+      "type": "custom"
+    },
+    "vault_factory": {
+      "build": "bash scripts/build_vault_factory.sh",
+      "candid": "src/candid/vault-factory.did",
+      "wasm": "target/wasm32-unknown-unknown/release/vault-factory.wasm",
       "type": "custom"
     },
     "vault": {
