@@ -86,7 +86,7 @@ body {
         sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    color: #424242;
+    color: #fff;
 }
 
 a {
@@ -184,6 +184,65 @@ button {
     position: fixed;
     top: 0;
     right: 0;
+}
+
+.plainBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    border: 1px solid var(--border-third-color);
+    width: fit-content;
+    color: var(--text-third-color);
+    padding: var(--padding-sm) var(--padding-md);
+    border-radius: var(--border-radius-md);
+    /* margin: auto; */
+    cursor: pointer;
+}
+
+.switchNetworksBtn {
+    display: flex;
+    font-size: 14px;
+    color: white !important;
+    justify-content: center;
+    padding: var(--padding-sm) var(--padding-md);
+    border-radius: var(--border-radius-md);
+    border: none;
+    cursor: pointer;
+    align-items: center;
+    background: linear-gradient(90deg, #db5462, #a644f1);
+    opacity: 0.5;
+    cursor: not-allowed;
+    align-items: center;
+}
+
+.switchNetworksBtn:hover {
+    background: linear-gradient(90deg, #a644f1, #db5462);
+}
+
+
+/* segment */
+.ant-segmented {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 2px;
+    color: var(--text-third-color);
+    font-size: 14px;
+    line-height: 1.5714285714285714;
+    list-style: none;
+    display: inline-block;
+    background-color: transparent;
+    border-radius: 6px;
+    /* transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1); */
+}
+
+.ant-segmented .ant-segmented-item:hover {
+    background-color: var(--bg-third-hover-color);
+}
+
+.ant-segmented .ant-segmented-item-selected {
+    background-color: var(--bg-third-color);
+    color: var(--text-second-color);
 }
 
 @keyframes pulse {
