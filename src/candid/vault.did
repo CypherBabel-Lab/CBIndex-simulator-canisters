@@ -19,7 +19,7 @@ type VaultConfig = record {
   exchange_rate_canister : principal;
   supported_tokens : vec principal;
   symbol : text;
-  shares_token : principal;
+  shares_token : opt principal;
 };
 type VaultError = variant {
   SharesTokenError : TxError;
@@ -34,4 +34,5 @@ service : (VaultConfig) -> {
   get_ledger : () -> (VaultLedger) query;
   get_nav : () -> (nat) query;
   pkg_version : () -> (text) query;
+  set_shares_token : (principal) -> (Result);
 }

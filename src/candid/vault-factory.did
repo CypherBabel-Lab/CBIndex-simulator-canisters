@@ -1,13 +1,3 @@
-type Account = record { owner : principal; subaccount : opt vec nat8 };
-type ArchiveOptions = record {
-  num_blocks_to_archive : nat64;
-  max_transactions_per_response : opt nat64;
-  trigger_threshold : nat64;
-  max_message_size_bytes : opt nat64;
-  cycles_for_archive_creation : opt nat64;
-  node_max_memory_size_bytes : opt nat64;
-  controller_id : principal;
-};
 type FactoryError = variant {
   CanisterCreateFailed : text;
   GenericError : text;
@@ -21,38 +11,27 @@ type FactoryError = variant {
   NotEnoughIcp : record { nat64; nat64 };
   NotEnoughCycles : record { nat64; nat64 };
 };
-type FeatureFlags = record { icrc2 : bool };
-type InitArgs = record {
-  decimals : opt nat8;
-  token_symbol : text;
-  transfer_fee : nat;
-  metadata : vec record { text; MetadataValue };
-  minting_account : Account;
-  initial_balances : vec record { Account; nat };
-  maximum_number_of_accounts : opt nat64;
-  accounts_overflow_trim_quantity : opt nat64;
-  fee_collector_account : opt Account;
-  archive_options : ArchiveOptions;
-  max_memo_length : opt nat16;
-  token_name : text;
-  feature_flags : opt FeatureFlags;
+type Metadata = record {
+  fee : nat;
+  decimals : nat8;
+  fee_to : principal;
+  owner : principal;
+  name : text;
+  is_test_token : opt bool;
+  symbol : text;
 };
-type MetadataValue = variant {
-  Int : int;
-  Nat : nat;
-  Blob : vec nat8;
-  Text : text;
+type Result = variant {
+  Ok : record { principal; principal };
+  Err : VaultFactoryError;
 };
-type Result = variant { Ok : principal; Err : VaultFactoryError };
-type Result_1 = variant { Ok; Err : VaultFactoryError };
-type Result_2 = variant { Ok : nat32; Err : FactoryError };
-type Result_3 = variant {
+type Result_1 = variant {
   Ok : vec record { principal; UpgradeResult };
   Err : FactoryError;
 };
-type Result_4 = variant { Ok : text; Err : FactoryError };
-type Result_5 = variant { Ok : nat64; Err : FactoryError };
-type Result_6 = variant { Ok; Err : FactoryError };
+type Result_2 = variant { Ok : text; Err : FactoryError };
+type Result_3 = variant { Ok : nat64; Err : FactoryError };
+type Result_4 = variant { Ok; Err : FactoryError };
+type Result_5 = variant { Ok : nat32; Err : FactoryError };
 type UpgradeResult = variant { Error : text; Noop; Upgraded };
 type VaultFactoryError = variant {
   FactoryError : FactoryError;
@@ -62,29 +41,26 @@ type VaultFactoryError = variant {
 service : (principal, opt principal) -> {
   cmc_principal : () -> (principal) query;
   get_all : () -> (vec principal) query;
-  get_checksum : () -> (Result_4) query;
+  get_checksum : () -> (Result_2) query;
   get_controller : () -> (principal) query;
   get_cycles : (opt principal) -> (opt nat);
   get_icp_fee : () -> (nat64) query;
   get_icp_to : () -> (principal) query;
   get_ledger_account_id : () -> (text) query;
   length : () -> (nat64) query;
-  refund_icp : () -> (Result_5);
-  reset_update_lock : () -> (Result_6);
-  set_cmc_principal : (principal) -> (Result_6);
-  set_controller : (principal) -> (Result_6);
-  set_icp_fee : (nat64) -> (Result_6);
-  set_icp_to : (principal) -> (Result_6);
+  refund_icp : () -> (Result_3);
+  reset_update_lock : () -> (Result_4);
+  set_cmc_principal : (principal) -> (Result_4);
+  set_controller : (principal) -> (Result_4);
+  set_icp_fee : (nat64) -> (Result_4);
+  set_icp_to : (principal) -> (Result_4);
   top_up : () -> (nat64);
-  version : () -> (Result_2) query;
-  create_vault : (InitArgs, vec principal, opt principal, opt principal) -> (
+  version : () -> (Result_5) query;
+  create_vault : (Metadata, vec principal, opt principal, opt principal) -> (
       Result,
     );
-  forget_vault : (text) -> (Result_1);
-  get_vault : (text) -> (opt principal) query;
-  get_vaults : () -> (vec principal) query;
+  get_vault : (text) -> (opt record { principal; principal }) query;
+  get_vaults : () -> (vec record { principal; principal }) query;
   pkg_version : () -> (text) query;
-  set_token_bytecode : () -> (Result_2);
-  set_vault_bytecode : () -> (Result_2);
-  upgrade : () -> (Result_3);
+  upgrade : () -> (Result_1);
 }

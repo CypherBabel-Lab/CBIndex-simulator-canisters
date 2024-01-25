@@ -1,14 +1,11 @@
-//! Module     : factory
-//! Copyright  : 2022 InfinitySwap Team
-//! Stability  : Experimental
-
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::{error::VaultFactoryError, state};
-use candid::Principal;
+use candid::{Principal, Nat};
 use canister_sdk::ic_factory::DEFAULT_ICP_FEE;
+use canister_sdk::ic_helpers::tokens::Tokens128;
 use canister_sdk::ic_metrics::{Metrics, MetricsStorage};
 use canister_sdk::{
     ic_canister::{
@@ -22,14 +19,14 @@ use canister_sdk::{
     ic_storage,
     ic_exports::ic_cdk::api::time,
 };
-use crate::icrc::*;
+use token::state::config::Metadata;
 use vault::state::config::VaultConfig;
-// use vault::state::config::VaultConfig;
+use crate::state::PrincipalValue;
 
 const DEFAULT_LEDGER_PRINCIPAL: Principal = Principal::from_slice(&[0, 0, 0, 0, 0, 0, 0, 2, 1, 1]);
 const DEFAULT_EXCHANGE_RATE_CANISTER: Principal = Principal::from_slice(&[0, 0, 0, 0, 0, 0, 0, 2, 1, 2]);
 const VAULT_WASM: &[u8] = include_bytes!("../../../target/wasm32-unknown-unknown/release/vault.wasm");
-const TOKEN_WASM: &[u8] = include_bytes!("../../icrc/icrc1_ledger.wasm");
+const TOKEN_WASM: &[u8] = include_bytes!("../../../target/wasm32-unknown-unknown/release/token.wasm");
 
 #[derive(Clone, Canister)]
 #[canister_no_upgrade_methods]
@@ -79,25 +76,13 @@ impl VaultFactoryCanister {
 
     /// Returns the vault, or None if it does not exist.
     #[query]
-    pub async fn get_vault(&self, name: String) -> Option<Principal> {
+    pub async fn get_vault(&self, name: String) -> Option<PrincipalValue> {
         state::get_state().get_vault(name)
     }
 
     #[query]
-    pub fn get_vaults(&self) -> Vec<Principal> {
+    pub fn get_vaults(&self) -> Vec<PrincipalValue> {
         state::get_state().get_vaults()
-    }
-
-    #[update]
-    pub async fn set_vault_bytecode(&self) -> Result<u32, FactoryError> {
-        state::get_state().set_vault_wasm(Some(VAULT_WASM.to_vec()));
-        self.set_canister_code(VAULT_WASM.to_vec())
-    }
-
-    #[update]
-    pub async fn set_token_bytecode(&self) -> Result<u32, FactoryError> {
-        state::get_state().set_token_wasm(Some(TOKEN_WASM.to_vec()));
-        self.set_canister_code(TOKEN_WASM.to_vec())
     }
 
     /// Creates a new vault.
@@ -128,71 +113,64 @@ impl VaultFactoryCanister {
     #[update]
     pub async fn create_vault(
         &self,
-        info: InitArgs,
+        info: Metadata,
         supported_tokens: Vec<Principal>,
         exchange_rate_canister: Option<Principal>,
         controller: Option<Principal>,
-    ) -> Result<Principal, VaultFactoryError> {
-        if info.token_name.is_empty() {
+    ) -> Result<PrincipalValue, VaultFactoryError> {
+        if info.name.is_empty() {
             return Err(VaultFactoryError::InvalidConfiguration(
                 "name",
                 "cannot be `None`",
             ));
         }
 
-        if info.token_name.as_bytes().len() > 1024 {
+        if info.name.as_bytes().len() > 1024 {
             return Err(VaultFactoryError::InvalidConfiguration(
                 "name",
                 "should be less then 1024 bytes",
             ));
         }
 
-        if info.token_symbol.is_empty() {
+        if info.symbol.is_empty() {
             return Err(VaultFactoryError::InvalidConfiguration(
                 "symbol",
                 "cannot be `None`",
             ));
         }
 
-        let key = info.token_name.clone();
+        let key = info.name.clone();
         if state::get_state().get_vault(key.clone()).is_some() {
             return Err(VaultFactoryError::AlreadyExists);
         }
 
-        let caller = canister_sdk::ic_kit::ic::caller();
-        // self.set_canister_code(TOKEN_WASM.to_vec())?;
-        // let shares_token_principal = self
-        //     .create_canister((info.clone(),), controller, Some(caller))
-        //     .await?;
+        let caller_principal = canister_sdk::ic_kit::ic::caller();
         let vault_config = VaultConfig {
-            owner: caller,
+            owner: caller_principal.clone(),
             exchange_rate_canister: exchange_rate_canister.unwrap_or(DEFAULT_EXCHANGE_RATE_CANISTER),
-            shares_token: caller,
-            name: info.token_name,
-            symbol: info.token_symbol,
+            name: info.name.clone(),
+            symbol: info.symbol.clone(),
             supported_tokens,
             deploy_time: time(),
+            shares_token: None,
         };
         self.set_canister_code(VAULT_WASM.to_vec())?;
         let vault_principal = self
-            .create_canister((vault_config,), controller, Some(caller))
+            .create_canister((vault_config,), controller, Some(caller_principal.clone()))
             .await?;
-        state::get_state().insert_vault(key, vault_principal);
-
-        Ok(vault_principal)
-    }
-
-    #[update]
-    pub async fn forget_vault(&self, name: String) -> Result<(), VaultFactoryError> {
-        let canister_id = self
-            .get_vault(name.clone())
-            .await
-            .ok_or(VaultFactoryError::FactoryError(FactoryError::NotFound))?;
-
-        self.drop_canister(canister_id, None).await?;
-        state::get_state().remove_vault(name);
-
-        Ok(())
+        self.set_canister_code(TOKEN_WASM.to_vec())?;
+        let mut info = info.clone();
+        info.owner = caller_principal;
+        info.decimals = 8;
+        info.fee = Tokens128::from(10000);
+        info.fee_to = caller_principal;
+        info.is_test_token = Some(false);
+        let shares_token_principal = self
+            .create_canister((info, Nat::from(0)), controller, Some(caller_principal.clone()))
+            .await?;
+        let principal_value = PrincipalValue::new(vault_principal, shares_token_principal);
+        state::get_state().insert_vault(key, principal_value.clone());
+        Ok(principal_value)
     }
 
     #[update]

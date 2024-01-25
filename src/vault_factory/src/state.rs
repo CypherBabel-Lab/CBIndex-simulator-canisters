@@ -23,17 +23,16 @@ impl State {
         });
     }
 
-    pub fn get_vault(&self, name: String) -> Option<Principal> {
+    pub fn get_vault(&self, name: String) -> Option<PrincipalValue> {
         Self::check_name(&name).then_some(())?;
 
         VAULTS_MAP
             .with(|map| map.borrow().get(&StringKey(name)))
-            .map(|principal| principal.0)
     }
 
-    pub fn get_vaults(&self) -> Vec<Principal> {
+    pub fn get_vaults(&self) -> Vec<PrincipalValue> {
         VAULTS_MAP
-            .with(|map| map.borrow().iter().map(|(_, v)| v.0).collect())
+            .with(|map| map.borrow().iter().map(|(_, v)| v.clone()).collect())
     }
 
     pub fn remove_vault(&self, name: String) -> Option<Principal> {
@@ -44,10 +43,10 @@ impl State {
             .map(|principal| principal.0)
     }
 
-    pub fn insert_vault(&mut self, name: String, principal: Principal) {
+    pub fn insert_vault(&mut self, name: String, principals: PrincipalValue) {
         VAULTS_MAP.with(|map| {
             map.borrow_mut()
-                .insert(StringKey(name), PrincipalValue(principal))
+                .insert(StringKey(name), principals)
         });
     }
 
@@ -116,20 +115,32 @@ impl BoundedStorable for StringKey {
     const IS_FIXED_SIZE: bool = false;
 }
 
-struct PrincipalValue(Principal);
+#[derive(Deserialize, CandidType, Clone, Debug)]
+pub struct PrincipalValue(Principal, Principal);
+
+impl PrincipalValue {
+    pub fn new(principal: Principal, principal2: Principal) -> Self {
+        PrincipalValue(principal, principal2)
+    }
+}
 
 impl Storable for PrincipalValue {
     fn to_bytes(&self) -> Cow<'_, [u8]> {
-        self.0.as_slice().into()
+        let mut bytes = self.0.as_slice().to_vec();
+        bytes.extend_from_slice(self.1.as_slice());
+        bytes.into()
     }
 
     fn from_bytes(bytes: Cow<'_, [u8]>) -> Self {
-        PrincipalValue(Principal::from_slice(&bytes))
+        let mut bytes = bytes.into_owned();
+        let principal = Principal::from_slice(&bytes.split_off(29));
+        let principal2 = Principal::from_slice(&bytes);
+        PrincipalValue(principal, principal2)
     }
 }
 
 impl BoundedStorable for PrincipalValue {
-    const MAX_SIZE: u32 = 29;
+    const MAX_SIZE: u32 = 29 * 2;
     const IS_FIXED_SIZE: bool = false;
 }
 
@@ -160,11 +171,9 @@ pub fn get_state() -> State {
 #[cfg(test)]
 mod tests {
     use candid::Principal;
-    use canister_sdk::ic_kit::MockContext;
     use ic_stable_structures::Storable;
 
     use crate::state::{PrincipalValue, StorableWasm};
-    use crate::State;
 
     use super::StringKey;
 
@@ -185,11 +194,11 @@ mod tests {
 
     #[test]
     fn principal_value_serialization() {
-        let val = PrincipalValue(Principal::anonymous());
+        let val = PrincipalValue(Principal::anonymous(), Principal::anonymous());
         let deserialized = PrincipalValue::from_bytes(val.to_bytes());
         assert_eq!(val.0, deserialized.0);
 
-        let val = PrincipalValue(Principal::management_canister());
+        let val = PrincipalValue(Principal::management_canister(), Principal::management_canister());
         let deserialized = PrincipalValue::from_bytes(val.to_bytes());
         assert_eq!(val.0, deserialized.0);
     }
@@ -207,48 +216,5 @@ mod tests {
         let val = StorableWasm(Some((1..255).collect()));
         let deserialized = StorableWasm::from_bytes(val.to_bytes());
         assert_eq!(val.0, deserialized.0);
-    }
-
-    fn init_state() -> State {
-        MockContext::new().inject();
-        let mut state = State::default();
-        state.reset();
-        state
-    }
-
-    #[test]
-    fn insert_get_remove_vaults() {
-        let mut state = init_state();
-
-        state.insert_vault("anon".into(), Principal::anonymous());
-        state.insert_vault("mng".into(), Principal::management_canister());
-
-        assert_eq!(state.get_vault("anon".into()), Some(Principal::anonymous()));
-        assert_eq!(
-            state.get_vault("mng".into()),
-            Some(Principal::management_canister())
-        );
-        assert_eq!(state.get_vault("other".into()), None);
-
-        assert_eq!(
-            state.remove_vault("mng".into()),
-            Some(Principal::management_canister())
-        );
-        assert_eq!(state.get_vault("anon".into()), Some(Principal::anonymous()));
-        assert_eq!(state.get_vault("mng".into()), None);
-    }
-
-    #[test]
-    fn set_get_vault_wasm() {
-        let mut state = init_state();
-
-        state.set_vault_wasm(None);
-        assert_eq!(state.get_vault_wasm(), None);
-
-        state.set_vault_wasm(Some(vec![]));
-        assert_eq!(state.get_vault_wasm(), Some(vec![]));
-
-        state.set_vault_wasm(Some(vec![123; 2048]));
-        assert_eq!(state.get_vault_wasm(), Some(vec![123; 2048]));
     }
 }

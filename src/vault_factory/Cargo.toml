@@ -18,4 +18,4 @@ ic-exports = { workspace = true }
 ic-stable-structures = { workspace = true  }
 
 vault = { path = "../vault", package = "vault" }
-icrc-ledger-types = "0.1.5"
+token = { path = "../token/api", package = "is20-token" }

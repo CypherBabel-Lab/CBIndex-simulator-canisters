@@ -13,9 +13,6 @@ use crate::state::config::VaultConfig;
 use crate::state::ledger::VaultLedger;
 use crate::error::VaultError;
 
-// #[cfg(feature = "export-api")]
-// use canister_sdk::{ic_cdk, ic_cdk_macros::inspect_message};
-
 #[derive(Clone, Canister)]
 #[canister_no_upgrade_methods]
 pub struct VaultCanister {
@@ -76,6 +73,14 @@ impl VaultCanister {
     #[query]
     pub async fn get_nav(&self) -> Nat {
         VaultLedger::get_stable().get_nav().await
+    }
+
+    #[update]
+    pub fn set_shares_token(&self, token: Principal) -> Result<(), VaultError> {
+        let mut conf = VaultConfig::get_stable();
+        conf.shares_token = Some(token);
+        VaultConfig::set_stable(conf);
+        Ok(())
     }
 
     #[update]

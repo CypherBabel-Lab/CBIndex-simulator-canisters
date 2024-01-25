@@ -24,7 +24,7 @@ impl Default for VaultLedger {
     fn default() -> Self {
         VaultLedger {
             tokens: None,
-        }
+        } 
     }
 }
 
@@ -93,7 +93,7 @@ impl VaultLedger {
     pub async fn get_nav(&self) -> Nat {
         let aum = self.get_aum().await;
         let shares_token = VaultConfig::get_stable().shares_token;
-        let icrc = icrc2::Icrc2Token::new(shares_token);
+        let icrc = icrc2::Icrc2Token::new(shares_token.unwrap());
         let total_supply = icrc.icrc1_total_supply().await.unwrap().0;
         if total_supply == Nat::from(0){
             Nat::from(0)

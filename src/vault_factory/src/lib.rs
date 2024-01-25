@@ -1,7 +1,7 @@
 pub mod error;
 pub mod api;
-pub mod icrc;
 pub mod state;
+use crate::state::PrincipalValue;
 pub use state::State;
 pub use api::*;
 
@@ -20,7 +20,8 @@ pub fn idl() -> String {
     };
     use ic_exports::Principal;
     use std::collections::HashMap;
-    use crate::icrc::*;
+    use token::state::config::Metadata;
+
 
     let canister_idl = generate_idl!();
     let mut factory_idl = <VaultFactoryCanister as FactoryCanister>::get_idl();
