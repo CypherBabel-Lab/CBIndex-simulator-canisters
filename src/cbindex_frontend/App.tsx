@@ -1,85 +1,78 @@
-import React from "react"
-/*
- * Connect2ic provides essential utilities for IC app development
- */
+import React, { useEffect } from "react"
 import { createClient } from "@connect2ic/core"
-import { NFID } from "@connect2ic/core/providers/nfid"
 import { defaultProviders } from "@connect2ic/core/providers"
-import { ConnectButton, ConnectDialog, Connect2ICProvider } from "@connect2ic/react"
+import { ConnectDialog, Connect2ICProvider } from "@connect2ic/react"
 import "@connect2ic/core/style.css"
-/*
- * Import canister definitions like this:
- */
-import * as counter from "../declarations/vault"
-/*
- * Some examples to get you started
- */
-import { Counter } from "./components/Counter"
-import { Transfer } from "./components/Transfer"
-import { Profile } from "./components/Profile"
+import VaultsPage from './pages/VaultsPage/VaultsPage'
+import * as vault_factory from '../declarations/vault_factory'
+import { ConfigProvider, theme } from "antd";
 import Layout from "./components/Layout/Layout/Layout"
-import { Routes, Route, Link } from "react-router-dom"
-import CreateActiveFund from "./pages/CreateActiveFund"
-import Vaults from './pages/Vaults'
-{/* <div className="App">
-  <ConnectDialog />
-  <header className="App-header">
-    <img src={logo} className="App-logo" alt="logo" />
-    <p className="slogan">
-      React+TypeScript Template
-    </p>
-    <p className="twitter">by <a href="https://twitter.com/miamaruq">@miamaruq</a></p>
-  </header>
-
-  <p className="examples-title">
-    Examples
-  </p>
-  <div className="examples">
-  
-    <Profile />
-    <Transfer />
-  </div>
-</div> */}
+import { Routes, Route } from "react-router-dom"
+import DetailsPage from "./pages/DetailsPage/DetailsPage"
+import CreateActiveFund from "./pages/CreateVaultPage/CreateVaultPage"
+import { BrowserRouter } from 'react-router-dom';
 function App() {
   return (
     <div className="App">
       <Routes>
-        <Route path="/vaults" element={<Counter />}></Route>
-        <Route path="/createactivefund" element={<CreateActiveFund />}></Route>
+        <Route path="/vaults" element={<VaultsPage />}></Route>
+        <Route path="/createactivefund" element={< CreateActiveFund />}></Route>
+        <Route path="/details" element={< DetailsPage />}></Route>
       </Routes>
       <ConnectDialog />
-      <Profile />
-      <Transfer />
     </div>
   )
 }
-
-const provider = new NFID({
-  // boolean
-  dev: true,
-  // The app name
-  appName: "my-ic-app",
-  // whitelisted canisters
-  whitelist: [],
-  // The url for the providers frontend
-  providerUrl: "https://nfid.one",
-  // The host used for canisters
-  host: window.location.origin,
-})
 const client = createClient({
   canisters: {
-    counter,
+    vault_factory,
   },
   providers: defaultProviders,
   globalProviderConfig: {
     dev: import.meta.env.DEV,
   },
 })
-
 export default () => (
-  <Connect2ICProvider client={client}>
-    <Layout>
-      <App />
-    </Layout>
-  </Connect2ICProvider>
+  <BrowserRouter>
+    <ConfigProvider
+      theme={{
+        algorithm: theme.darkAlgorithm,
+        token: {
+          colorPrimary: "#50F6BF",
+        },
+        components: {
+          Table: {
+            borderRadius: 4,
+            borderRadiusLG: 6,
+            colorBgContainer: "transparent",
+            fontSize: 14,
+            rowHoverBg: "var(--bg-third-hover-color)",
+            colorText: "var(--text-third-color)",
+          },
+          Button: {
+            colorText: "var(--text-third-color)",
+            colorBorder: "var(--border-third-color)",
+            colorBgContainer: "transparent",
+            textHoverBg: "#fff",
+            borderRadius: ("var(--border-radius-lg)" as any),
+          },
+
+          Select: {
+            colorText: "var(--text-third-color)",
+            colorBorder: "var(--border-third-color)",
+            colorBgContainer: "transparent",
+          },
+          Popover: {
+            colorBgElevated: "rgba(48,48,48, 0.9)",
+          },
+        },
+      }}
+    >
+      <Connect2ICProvider client={client}>
+        <Layout>
+          <App />
+        </Layout>
+      </Connect2ICProvider>
+    </ConfigProvider>
+  </BrowserRouter>
 )

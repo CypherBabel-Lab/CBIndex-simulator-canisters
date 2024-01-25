@@ -1,21 +1,16 @@
 import React, { useEffect, useState } from "react";
-// import { useRouter } from "next/router";
 import classes from "./style.module.less";
-// import Link from "next/link";
 import Logo from "../Header/Logo/Logo";
 import SoundNotice from "../SoundNotice/SoundNotice";
-// import { useWeb3Modal } from "@web3modal/wagmi/react";
-// import { useNetwork } from "wagmi";
-// import { defineChain } from "viem";
-// import { ethers } from "ethers";
 import { ConnectButton, ConnectDialog, Connect2ICProvider } from "@connect2ic/react"
 const headerMenuList = [
   {
-    key: "/activefund/vaults",
+    key: "/vaults",
     label: "Active Fund",
     pathname: "/activefund/[...page]",
   },
 ];
+import { Link } from "react-router-dom";
 const PcHeadr = () => {
   return (
     <div className={classes.container}>
@@ -38,20 +33,20 @@ const PcHeadr = () => {
           <div className={classes.optionArea}>
             {headerMenuList.map((item, index) => {
               return (
-                <a href={item.key} key={item.key}>
+                <Link to={item.key} key={item.key}>
                   <div
                     className={classes.optionItem}
                   >
                     {item.label}
                   </div>
-                </a>
+                </Link>
               );
             })}
           </div>
           <div>
             <ConnectButton />
           </div>
-       
+
         </div>
       </div>
     </div >
