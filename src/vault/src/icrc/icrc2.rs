@@ -17,7 +17,7 @@ pub trait Icrc2: Icrc1 + TokenPrincipalFetcher{
         call(token, "icrc2_transfer_from", (args,)).await
     }
 
-    async fn icrc2_allowance(&self, args: AllowanceArgs) -> CallResult<(AllowanceArgs,)>{
+    async fn icrc2_allowance(&self, args: AllowanceArgs) -> CallResult<(Allowance,)>{
         let token = <Self as TokenPrincipalFetcher>::token_principal(&self);
         call(token, "icrc2_allowance", (args,)).await
     }
