@@ -133,7 +133,7 @@ impl Storable for PrincipalValue {
 
     fn from_bytes(bytes: Cow<'_, [u8]>) -> Self {
         let mut bytes = bytes.into_owned();
-        let principal = Principal::from_slice(&bytes.split_off(29));
+        let principal = Principal::from_slice(&bytes.split_off(bytes.len() / 2));
         let principal2 = Principal::from_slice(&bytes);
         PrincipalValue(principal, principal2)
     }
