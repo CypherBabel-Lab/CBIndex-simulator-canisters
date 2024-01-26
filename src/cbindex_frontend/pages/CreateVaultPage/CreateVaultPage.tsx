@@ -1,82 +1,92 @@
 import React, { useEffect, useState } from "react";
 import { Input, Select, Button, Modal, Spin } from "antd";
 import classes from "./style.module.less";
-import { useWallet } from "@connect2ic/react"
-import { InitArgs } from '../../../declarations/vault_factory/vault_factory.did'
+import { useWallet, useBalance } from "@connect2ic/react"
+import { Metadata } from '../../../declarations/vault_factory/vault_factory.did'
 import { Principal } from '@dfinity/principal';
 const rule = /^[a-zA-Z0-9]{3,50}$/;
 import { useCanister } from "@connect2ic/react";
+import MySelect from '../../components/Select/Select'
 const CreateVaultPage = () => {
   const [vault_factory] = useCanister("vault_factory")
-  const options = [
-    { value: "123", label: "DAI" },
-  ];
+  const [show, setShow] = useState(true)
   const [createObj, setCreateObj] = useState({
     name: "",
     symbol: "",
-    asset: "123"
   });
   const [wallet] = useWallet()
   const [createModal, setCreateModal] = useState(false);
   const [createStatus, setCreateStatus] = useState({
-    status: "create"
+    status: "create",
+    msg: "",
   })
   const [nameStatus, setNameStatus] = useState(true);
   const [symbolStatus, setSymbolStatus] = useState(true);
+  const [tokens, setTokens] = useState([])
   const createNewVault = async () => {
-    setCreateStatus({ status: "loading" })
+    setCreateStatus({ ...createStatus, status: "loading" })
     if (!wallet) return
-    const initArgs: InitArgs = {
-      decimals: [], // 代币的小数位数，设置为空数组
-      token_symbol: createObj.symbol, // 代币的符号
-      transfer_fee: BigInt(100), // 转账手续费，使用 number 类型
-      metadata: [], // 元数据，设置为空数组
-      minting_account: {
-        owner: Principal.fromText(wallet.principal), // 替换为实际的 Principal
-        subaccount: [], // 或者提供 Uint8Array 或 number[] 类型的值，设置为空数组
-      },
-      initial_balances: [
-        [
-          {
-            owner: Principal.fromText(wallet.principal), // 替换为实际的 Principal
-            subaccount: [], // 或者提供 Uint8Array 或 number[] 类型的值，设置为空数组
-          },
-          BigInt(1),
-        ],
-        // 添加更多账户和余额...
-      ],
-      maximum_number_of_accounts: [], // 设置为空数组
-      accounts_overflow_trim_quantity: [], // 设置为空数组
-      fee_collector_account: [], // 设置为空数组
-      archive_options: {
-        num_blocks_to_archive: BigInt(100),
-        max_transactions_per_response: [],
-        trigger_threshold: BigInt(0),
-        max_message_size_bytes: [],
-        cycles_for_archive_creation: [],
-        node_max_memory_size_bytes: [],
-        controller_id: Principal.fromText(wallet.principal)
-      },
-      max_memo_length: [], // 设置为空数组
-      token_name: createObj.name, // 替换为实际的代币名称
-      feature_flags: [{ 'icrc2': true }], // 使用对象而非数组
+    const initArgs: Metadata = {
+      fee: BigInt(1),
+      decimals: 16,
+      fee_to: Principal.fromText(wallet.principal),
+      owner: Principal.fromText(wallet.principal),
+      name: createObj.name,
+      symbol: createObj.symbol,
+      is_test_token: [false],
     };
-    // 调用 create_vault 方法
-    const controllers = [Principal.fromText(wallet.principal)]; // 填充实际的 Principal 数组
     try {
-      const resut = await vault_factory.create_vault(initArgs, controllers, [], []) as any
+      const resut = await vault_factory.create_vault(initArgs, [...tokens], [], []) as any
       if (resut.Ok) {
-        setCreateStatus({ status: "success" })
+        setCreateStatus({ ...createStatus, status: "success" })
       } else {
-        setCreateStatus({ status: "error" })
+        switch (JSON.stringify(resut)) {
+          case '{"Err":{"AlreadyExists":null}}':
+            setCreateStatus({ msg: "Name Already Exists!", status: "error" })
+            break
+          default:
+            setCreateStatus({ ...createStatus, status: "error" })
+        }
       }
     } catch (e) {
       console.log(e);
+      setCreateStatus({ ...createStatus, status: "error" })
     }
   };
+
+  const getSelectTokenArrayFuc = (tokensArray: Array<string>) => {
+    let t = []
+    for (let i = 0; i < tokensArray.length; i++) {
+      t.push(Principal.fromText(tokensArray[i]))
+    }
+    setTokens(t)
+  }
+  const refresh = () => {
+    setCreateObj({ name: "", symbol: "" })
+    setShow(!show)
+    setTimeout(() => {
+      setShow(true)
+    })
+  }
+  const createOkModalEvt = () => {
+    switch (createStatus.status) {
+      case "create":
+        createNewVault()
+        break
+      case "success":
+        setCreateModal(false)
+        setCreateStatus({ ...createStatus, status: "create" })
+        refresh()
+        break
+      case "error":
+        setCreateModal(false)
+        setCreateStatus({ ...createStatus, status: "create" })
+        refresh()
+    }
+  }
   return (
     <>
-      {true ? (
+      {wallet ? (
         <div className={classes.createCreateVaultBox}>
           <div className={classes.createCreateInfoBox}>
             <div className={classes.createItem}>
@@ -126,13 +136,8 @@ const CreateVaultPage = () => {
               )}
             </div>
             <div className={classes.createItem}>
-              <div className={classes.title}>Denomination Asset</div>
-              <Select
-                options={options}
-                onChange={(v) => {
-                  setCreateObj({ ...createObj, asset: v });
-                }}
-              />
+              <div className={classes.title}>Supported Tokens</div>
+              {show && <MySelect getSelectTokenArrayFuc={getSelectTokenArrayFuc} />}
             </div>
             <div className={classes.createBtn}>
               <Button
@@ -140,7 +145,7 @@ const CreateVaultPage = () => {
                   createObj.name === "" ||
                   createObj.symbol === "" ||
                   !nameStatus ||
-                  !symbolStatus
+                  !symbolStatus || !tokens.length
                 }
                 onClick={() => {
                   setCreateModal(true);
@@ -153,49 +158,23 @@ const CreateVaultPage = () => {
         </div>
       ) : (
         <div className={classes.noLoginBox}>
-          {/* Please connect to wallet and switch to the {JSON.parse(localStorage.getItem("chainInfo") as any).chainConf.networkName} */}
+          Please connect wallet
         </div>
       )}
       {/*Modal*/}
       <div>
         <Modal
           open={createModal}
-          onOk={() => {
-            console.log("createModal");
-            console.log(createStatus.status);
-
-            switch (createStatus.status) {
-              case "create":
-                createNewVault()
-                break
-              case "success":
-                setCreateModal(false)
-                setCreateStatus({ status: "create" })
-                setCreateObj({
-                  name: "",
-                  symbol: "",
-                  asset: "123"
-                })
-                break
-              case "error":
-                setCreateModal(false)
-                setCreateStatus({ status: "create" })
-                setCreateObj({
-                  name: "",
-                  symbol: "",
-                  asset: "123"
-                })
-
-            }
-          }}
+          onOk={() => createOkModalEvt()}
           onCancel={() => {
             setCreateModal(false);
-            setCreateStatus({ status: "create" })
+            setCreateStatus({ ...createStatus, status: "create" })
+
           }}
           maskClosable={false}
           cancelButtonProps={{
             style: {
-              display: createStatus.status == 'loading' ? "none" : "",
+              display: createStatus.status == 'loading' || createStatus.status === 'success' ? "none" : "",
             },
           }}
           okButtonProps={{
@@ -242,12 +221,12 @@ const CreateVaultPage = () => {
           {createStatus.status === 'error' && (
             <>
               <div className={classes.createModalText}>
-                created Error!
+                {createStatus.msg ? createStatus.msg : "created Error!"}
               </div>
             </>
           )}
         </Modal>
-      </div>
+      </div >
     </>
   );
 };

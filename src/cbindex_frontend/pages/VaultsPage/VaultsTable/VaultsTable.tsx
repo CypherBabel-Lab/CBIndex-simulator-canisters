@@ -1,21 +1,16 @@
 import React from "react";
-import { Table } from "antd";
-// import icon from "../../../utils/TokenIcon/Icon.json";
-import { Avatar, Spin } from "antd";
-// import Link from "next/link";
-// import { ServerAssetes } from "../../../utils/consts/Consts";
+import { Popover, Table } from "antd";
+import { Spin } from "antd";
 import classes from "./style.module.less";
 import { Link } from "react-router-dom";
-// import { getImageUrl } from '../../../utils/TokenIcon/getIconImage'
-
+import token from '../../../utils/tokenInfo/token.json'
+import Tokenimg from '../../../components/Tokenimg/Tokenimg'
 function truncateString(inputString: any, maxLength: Number) {
   if (inputString.length > maxLength) {
     return inputString.substring(0, maxLength) + '...';
   }
   return inputString;
 }
-
-
 const VaultsTable = ({ dataSource, loading, total, setPage, address }: any) => {
   const columns = [
     {
@@ -42,37 +37,17 @@ const VaultsTable = ({ dataSource, loading, total, setPage, address }: any) => {
       }
     },
     {
-      title: "Denomination Asset",
-      dataIndex: "denominationAssetAddress",
-      key: "denominationAssetAddress",
-      render: (text: any, row: any) => {
+      title: "Supported Tokens",
+      dataIndex: "supported_tokens",
+      key: "supported_tokens",
+      render: (tokens: any, row: any) => {
         return (
           <div className={classes.denominationAssetColumn}>
-            {/* <Avatar
-              src={`${ServerAssetes.Icon + getImageUrl(row.denominationAsset.symbol)}`}
-              className={classes.avatar}
-            /> */}
-            USD
+            <Tokenimg tokens={tokens} />
           </div>
         );
       },
     },
-    // {
-    //   title: "deploy_time",
-    //   dataIndex: "deploy_time",
-    //   key: "deploy_time",
-    //   // sortOrder: 'descend',
-    //   // sorter: (a, b) => Number(a.deploy_time) - Number(b.deploy_time),
-    //   render: (text: any, row: any) => {
-    //     const date = new Date(Number(text));
-    //     console.log(date);
-    //     return (
-    //       <div className={classes.denominationAssetColumn}>
-    //         {Number(text)}
-    //       </div>
-    //     );
-    //   },
-    // },
     {
       title: "Action",
       dataIndex: "action",

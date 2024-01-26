@@ -1,16 +1,9 @@
 import React, { useEffect, useState } from "react";
 import {
-  Button,
-  InputNumber,
   Tabs,
-  Avatar,
-  Modal,
-  Spin,
   Segmented,
   Select,
   Space,
-  Slider,
-  Checkbox,
 } from "antd";
 import {
   ArrowLeftOutlined,
@@ -18,26 +11,30 @@ import {
   VerticalAlignTopOutlined,
   SwapOutlined,
 } from "@ant-design/icons";
-import { DownCircleOutlined } from "@ant-design/icons";
+import { getTimeDistanceFromNow } from '../../utils/getTimeDistanceFromNow'
 import classes from "./style.module.less";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { createActor } from '../../../declarations/vault/index'
 import AssetTable from "./TableType/AssetTable/AssetTable";
 import DepositorTable from './TableType/DepositorTable/DepositorTable'
 import Chart from "../../components/Chart/Chart";
+import Tokenimg from "../../components/Tokenimg/Tokenimg";
 const DetailsPage = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams()
   const [dataSource, setDataSource] = useState({} as any)
   const getVaultList = async () => {
-    console.log(params.getAll("vaultAddress")[0]);
-
     let vault = createActor(params.getAll("vaultAddress")[0])
     let config = await vault.get_config() as any
     config.owner = config.owner.toString()
-    setDataSource(config)
-    console.log(config.owner.toString());
+    for (let i = 0; i < config.supported_tokens.length; i++) {
 
+      config.supported_tokens[i] = config.supported_tokens[i].toString()
+    }
+    const millisecondsTimestamp = Number(config.deploy_time) / 1e6;
+    const date = new Date(millisecondsTimestamp);
+    config.deploy_time = getTimeDistanceFromNow(date)
+    setDataSource(config)
   }
   useEffect(() => {
     getVaultList()
@@ -150,14 +147,12 @@ const DetailsPage = () => {
           </div>
           <div className={classes.dedtailsHeaderRight}>
             <div
-              // onClick={async () => clickInvestBtnEvt()}
               className="switchNetworksBtn"
             >
               <VerticalAlignBottomOutlined />
               <span className={classes.headerRightTitle}>Invest</span>
             </div>
             <div
-              // onClick={async () => clickRedeemBtnEvt()}
               style={{
                 marginRight: "6px",
                 marginLeft: "6px",
@@ -167,9 +162,7 @@ const DetailsPage = () => {
               <VerticalAlignTopOutlined />
               <span className={classes.headerRightTitle}>Reddeem</span>
             </div>
-            {/* {address[0] === vaultInfo.owner && ( */}
             <div
-              // onClick={() => clickSwapBtnEvt()}
               className="switchNetworksBtn"
             >
               <SwapOutlined />
@@ -187,28 +180,19 @@ const DetailsPage = () => {
           </div>
           <div className={classes.info_card}>
             <div className={classes.infoCardValue}>{0}</div>
-            {/* <div className={classes.infoCardValue}>{DepositorList.length}</div> */}
             <div className={classes.infoCardTitle}>Investor</div>
           </div>
           <div className={classes.info_card}>
             <div className={classes.infoCardValue}>
-              {/* {vaultInfo.denominationAsset?.symbol} */}
-              USDT
+              <Tokenimg tokens={dataSource?.supported_tokens} />
               <div className={classes.assetLogo}>
-                {/* <Image
-                  src={`${ServerAssetes.Icon + getImageUrl(vaultInfo.denominationAsset?.symbol)}`}
-                  width={20}
-                  height={20}
-                  alt="icon"
-                /> */}
               </div>
             </div>
-            <div className={classes.infoCardTitle}>Denomination Asset</div>
+            <div className={classes.infoCardTitle}>Supported Tokens</div>
           </div>
           <div className={classes.info_card}>
             <div className={classes.infoCardValue}>
-              1 Months Ago
-              {/* {getTimeDistanceFromNow(vaultInfo?.createdAt)} */}
+              {dataSource.deploy_time}
             </div>
             <div className={classes.infoCardTitle}>Since Inception</div>
           </div>
