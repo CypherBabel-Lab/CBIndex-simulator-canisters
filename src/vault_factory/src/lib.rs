@@ -1,6 +1,7 @@
 pub mod error;
 pub mod api;
 pub mod state;
+use crate::state::VaultFactoryConfig;
 use crate::state::PrincipalValue;
 pub use state::State;
 pub use api::*;

@@ -1,7 +1,6 @@
 [workspace]
 resolver = "2"
 members = [
-    "src/token_factory",
     "src/token/api",
     "src/token/impl",
     "src/vault",

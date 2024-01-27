@@ -74,6 +74,32 @@ impl State {
         });
     }
 
+    pub fn get_vault_factory_controller(&self) -> Principal {
+        VAULT_FACTORY_CONFIG_CELL.with(|cell| cell.borrow().get().controller.clone())
+    }
+
+    pub fn set_vault_factory_controller(&mut self, controller: Principal) {
+        VAULT_FACTORY_CONFIG_CELL.with(|cell| {
+            let mut config = cell.borrow().get().clone();
+            config.controller = controller;
+            cell.borrow_mut()
+                .set(config)
+                .expect("failed to set vault factory config to stable storage");
+        });
+    }
+
+    pub fn gey_vault_factory_config(&self) -> VaultFactoryConfig {
+        VAULT_FACTORY_CONFIG_CELL.with(|cell| cell.borrow().get().clone())
+    }
+
+    pub fn set_vault_factory_config(&mut self, config: VaultFactoryConfig) {
+        VAULT_FACTORY_CONFIG_CELL.with(|cell| {
+            cell.borrow_mut()
+                .set(config)
+                .expect("failed to set vault factory config to stable storage");
+        });
+    }
+
     fn check_name(name: &str) -> bool {
         name.as_bytes().len() <= MAX_TOKEN_LEN_IN_BYTES
     }
@@ -144,10 +170,48 @@ impl BoundedStorable for PrincipalValue {
     const IS_FIXED_SIZE: bool = false;
 }
 
+
+#[derive(Deserialize, CandidType, Clone, Debug)]
+pub struct VaultFactoryConfig {
+    pub controller: Principal,
+}
+
+impl Default for VaultFactoryConfig {
+    fn default() -> Self {
+        VaultFactoryConfig {
+            controller: Principal::anonymous(),
+        }
+    }
+}
+
+impl Storable for VaultFactoryConfig {
+    // Stable storage expects non-failing serialization/deserialization.
+
+    fn to_bytes(&self) -> Cow<'_, [u8]> {
+        Cow::Owned(Encode!(self).expect("failed to encode token config"))
+    }
+
+    fn from_bytes(bytes: Cow<'_, [u8]>) -> Self {
+        Decode!(&bytes, Self).expect("failed to decode token config")
+    }
+}
+
+impl VaultFactoryConfig {
+    pub fn get_stable() -> VaultFactoryConfig {
+        VAULT_FACTORY_CONFIG_CELL.with(|c| c.borrow().get().clone())
+    }
+
+    pub fn set_stable(config: VaultFactoryConfig) {
+        VAULT_FACTORY_CONFIG_CELL.with(|c| c.borrow_mut().set(config))
+            .expect("unable to set vault factory config to stable memory")
+    }
+}
+
 // starts with 10 because 0..10 reserved for `ic-factory` state.
 const TOKEN_WASM_MEMORY_ID: MemoryId = MemoryId::new(10);
 const VAULT_WASM_MEMORY_ID: MemoryId = MemoryId::new(11);
 const VAULTS_MEMORY_ID: MemoryId = MemoryId::new(12);
+const VAULT_FACTORY_CONFIG_MEMORY_ID: MemoryId = MemoryId::new(13);
 
 thread_local! {
     static TOKEN_WASM_CELL: RefCell<StableCell<StorableWasm>> = {
@@ -158,7 +222,12 @@ thread_local! {
     static VAULT_WASM_CELL: RefCell<StableCell<StorableWasm>> = {
         RefCell::new(StableCell::new(VAULT_WASM_MEMORY_ID, StorableWasm::default())
             .expect("failed to initialize vault wasm stable storage"))
-};
+    };
+
+    static VAULT_FACTORY_CONFIG_CELL: RefCell<StableCell<VaultFactoryConfig>> = {
+        RefCell::new(StableCell::new(VAULT_FACTORY_CONFIG_MEMORY_ID, VaultFactoryConfig::default())
+            .expect("stable memory vault config initialization failed"))
+    };
 
     static VAULTS_MAP: RefCell<StableBTreeMap<StringKey, PrincipalValue>> =
         RefCell::new(StableBTreeMap::new(VAULTS_MEMORY_ID));

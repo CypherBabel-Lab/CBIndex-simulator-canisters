@@ -1,13 +1,7 @@
 {
   "canisters": {
-    "token_factory": {
-      "build": "bash scripts/build.sh",
-      "candid": "src/candid/token-factory.did",
-      "wasm": "target/wasm32-unknown-unknown/release/token-factory.wasm",
-      "type": "custom"
-    },
     "token": {
-      "build": "bash scripts/build.sh",
+      "build": "bash scripts/build_token.sh",
       "candid": "src/candid/token.did",
       "wasm": "target/wasm32-unknown-unknown/release/token.wasm",
       "type": "custom"
@@ -19,7 +13,7 @@
       "type": "custom"
     },
     "vault": {
-      "build": "bash scripts/build.sh",
+      "build": "bash scripts/build_vault.sh",
       "candid": "src/candid/vault.did",
       "wasm": "target/wasm32-unknown-unknown/release/vault.wasm",
       "type": "custom"
@@ -31,6 +25,16 @@
       "remote": {
         "id": {
           "ic": "ryjl3-tyaaa-aaaaa-aaaba-cai"
+        }
+      }
+    },
+    "cmc": {
+      "type": "custom",
+      "candid": "src/cmc/cmc.did",
+      "wasm": "src/cmc/cmc-custom.wasm",
+      "remote": {
+        "id": {
+          "ic": "rkp4c-7iaaa-aaaaa-aaaca-cai"
         }
       }
     },

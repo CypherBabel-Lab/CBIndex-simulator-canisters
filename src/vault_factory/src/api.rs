@@ -19,14 +19,16 @@ use canister_sdk::{
     ic_storage,
     ic_exports::ic_cdk::api::time,
 };
+use ic_exports::{ic_cdk, ledger};
 use ic_exports::icrc_types::icrc2::allowance::AllowanceArgs;
 use ic_exports::icrc_types::icrc2::transfer_from::TransferFromArgs;
 use ic_exports::icrc_types::icrc1::account::Account as Account;
 use token::state::config::Metadata;
 use vault::state::config::VaultConfig;
+use vault::icrc:: icrc1:: Icrc1;
 use vault::icrc:: icrc2::{ Icrc2, Icrc2Token};
 use vault::icrc:: utils::principal_to_subaccount;
-use crate::state::PrincipalValue;
+use crate::state::{PrincipalValue, VaultFactoryConfig};
 
 const DEFAULT_LEDGER_PRINCIPAL: Principal = Principal::from_slice(&[0, 0, 0, 0, 0, 0, 0, 2, 1, 1]);
 const DEFAULT_EXCHANGE_RATE_CANISTER: Principal = Principal::from_slice(&[0, 0, 0, 0, 0, 0, 0, 2, 1, 2]);
@@ -77,6 +79,12 @@ impl VaultFactoryCanister {
 
         FactoryState::default().reset(factory_configuration);
         state::get_state().reset();
+        state::get_state().set_vault_factory_controller(controller);
+    }
+
+    #[query]
+    pub fn get_config(&self) -> VaultFactoryConfig {
+        state::get_state().gey_vault_factory_config()
     }
 
     /// Returns the vault, or None if it does not exist.
@@ -150,31 +158,6 @@ impl VaultFactoryCanister {
         }
 
         let caller_principal = canister_sdk::ic_kit::ic::caller();
-        let canister_id = canister_sdk::ic_kit::ic::id();
-
-        let icp_token = Icrc2Token::new(DEFAULT_LEDGER_PRINCIPAL);
-        let icp_allowance = icp_token.icrc2_allowance(AllowanceArgs {
-            account: Account::from(caller_principal),
-            spender: Account::from(canister_id),
-        }).await.unwrap().0;
-        if icp_allowance.allowance < DEFAULT_ICP_FEE {
-            return Err(VaultFactoryError::InvalidIcpAllowance);
-        }
-        let transfer_result = icp_token.icrc2_transfer_from(TransferFromArgs {
-            spender_subaccount: None,
-            from: Account::from(caller_principal),
-            to: Account {
-                owner: canister_id,
-                subaccount: Some(principal_to_subaccount(&caller_principal)),
-            },
-            amount: icp_allowance.allowance,
-            fee : None,
-            memo: None,
-            created_at_time: None,
-        }).await.unwrap().0;
-        if transfer_result.is_err() {
-            return Err(VaultFactoryError::TxError(transfer_result.unwrap_err()));
-        }
         let vault_config = VaultConfig {
             owner: caller_principal.clone(),
             exchange_rate_canister: exchange_rate_canister.unwrap_or(DEFAULT_EXCHANGE_RATE_CANISTER),
@@ -184,11 +167,11 @@ impl VaultFactoryCanister {
             deploy_time: time(),
             shares_token: None,
         };
-        self.set_canister_code(VAULT_WASM.to_vec())?;
+        self.set_canister_wasm(VAULT_WASM.to_vec())?;
         let vault_principal = self
             .create_canister((vault_config,), controller, Some(caller_principal.clone()))
             .await?;
-        self.set_canister_code(TOKEN_WASM.to_vec())?;
+        self.set_canister_wasm(TOKEN_WASM.to_vec())?;
         let mut info = info.clone();
         info.owner = caller_principal;
         info.decimals = 8;
@@ -201,6 +184,48 @@ impl VaultFactoryCanister {
         let principal_value = PrincipalValue::new(vault_principal, shares_token_principal);
         state::get_state().insert_vault(key, principal_value.clone());
         Ok(principal_value)
+    }
+
+    fn set_canister_wasm(&self, wasm: Vec<u8>) -> Result<(), VaultFactoryError> {
+        let _ = FactoryState::default().check_is_owner_internal(state::get_state().get_vault_factory_controller())?.set_canister_wasm(wasm);
+        Ok(())
+    }
+
+    #[update]
+    pub async fn transfer_icp(&self) -> Result<(), VaultFactoryError> {
+        let caller_principal = canister_sdk::ic_kit::ic::caller();
+        let canister_id = canister_sdk::ic_kit::ic::id();
+
+        let icp_token = Icrc2Token::new(DEFAULT_LEDGER_PRINCIPAL);
+
+        let icp_allowance = icp_token.icrc2_allowance(AllowanceArgs {
+            account: Account::from(caller_principal),
+            spender: Account::from(canister_id),
+        }).await.unwrap().0;
+        // if icp_allowance.allowance < DEFAULT_ICP_FEE {
+        //     return Err(VaultFactoryError::InvalidIcpAllowance);
+        // }
+        let transfer_result = icp_token.icrc2_transfer_from(TransferFromArgs {
+            spender_subaccount: None,
+            from: Account::from(caller_principal),
+            to: Account {
+                owner: canister_id,
+                subaccount: Some(principal_to_subaccount(&caller_principal)),
+            },
+            amount: icp_allowance.allowance - Nat::from(ledger::DEFAULT_TRANSFER_FEE.get_e8s()),
+            fee : Some(Nat::from(ledger::DEFAULT_TRANSFER_FEE.get_e8s())),
+            memo: None,
+            created_at_time: None,
+        }).await.unwrap().0;
+        if transfer_result.is_err() {
+            return Err(VaultFactoryError::TxError(transfer_result.unwrap_err()));
+        }
+        let balance = icp_token.icrc1_balance_of(Account {
+            owner: canister_id,
+            subaccount: Some(principal_to_subaccount(&caller_principal)),
+        }).await.unwrap().0;
+        ic_cdk::println!("balance: {:?}", balance);
+        Ok(())
     }
 
     #[update]

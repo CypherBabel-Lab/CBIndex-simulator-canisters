@@ -24,14 +24,15 @@ type Result = variant {
   Ok : record { principal; principal };
   Err : VaultFactoryError;
 };
-type Result_1 = variant {
+type Result_1 = variant { Ok; Err : VaultFactoryError };
+type Result_2 = variant {
   Ok : vec record { principal; UpgradeResult };
   Err : FactoryError;
 };
-type Result_2 = variant { Ok : text; Err : FactoryError };
-type Result_3 = variant { Ok : nat64; Err : FactoryError };
-type Result_4 = variant { Ok; Err : FactoryError };
-type Result_5 = variant { Ok : nat32; Err : FactoryError };
+type Result_3 = variant { Ok : text; Err : FactoryError };
+type Result_4 = variant { Ok : nat64; Err : FactoryError };
+type Result_5 = variant { Ok; Err : FactoryError };
+type Result_6 = variant { Ok : nat32; Err : FactoryError };
 type TransferFromError = variant {
   GenericError : record { message : text; error_code : nat };
   TemporarilyUnavailable;
@@ -44,6 +45,7 @@ type TransferFromError = variant {
   InsufficientFunds : record { balance : nat };
 };
 type UpgradeResult = variant { Error : text; Noop; Upgraded };
+type VaultFactoryConfig = record { controller : principal };
 type VaultFactoryError = variant {
   InvalidIcpAllowance;
   FactoryError : FactoryError;
@@ -54,26 +56,28 @@ type VaultFactoryError = variant {
 service : (principal, opt principal) -> {
   cmc_principal : () -> (principal) query;
   get_all : () -> (vec principal) query;
-  get_checksum : () -> (Result_2) query;
+  get_checksum : () -> (Result_3) query;
   get_controller : () -> (principal) query;
   get_cycles : (opt principal) -> (opt nat);
   get_icp_fee : () -> (nat64) query;
   get_icp_to : () -> (principal) query;
   get_ledger_account_id : () -> (text) query;
   length : () -> (nat64) query;
-  refund_icp : () -> (Result_3);
-  reset_update_lock : () -> (Result_4);
-  set_cmc_principal : (principal) -> (Result_4);
-  set_controller : (principal) -> (Result_4);
-  set_icp_fee : (nat64) -> (Result_4);
-  set_icp_to : (principal) -> (Result_4);
+  refund_icp : () -> (Result_4);
+  reset_update_lock : () -> (Result_5);
+  set_cmc_principal : (principal) -> (Result_5);
+  set_controller : (principal) -> (Result_5);
+  set_icp_fee : (nat64) -> (Result_5);
+  set_icp_to : (principal) -> (Result_5);
   top_up : () -> (nat64);
-  version : () -> (Result_5) query;
+  version : () -> (Result_6) query;
   create_vault : (Metadata, vec principal, opt principal, opt principal) -> (
       Result,
     );
+  get_config : () -> (VaultFactoryConfig) query;
   get_vault : (text) -> (opt record { principal; principal }) query;
   get_vaults : () -> (vec record { principal; principal }) query;
   pkg_version : () -> (text) query;
-  upgrade : () -> (Result_1);
+  transfer_icp : () -> (Result_1);
+  upgrade : () -> (Result_2);
 }
