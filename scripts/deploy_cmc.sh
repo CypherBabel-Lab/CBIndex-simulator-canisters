@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-dfx identity new minter
+dfx identity new minter --storage-mode=plaintext
 dfx identity use minter
 MINT_ACC_ID=$(dfx ledger account-id)
 dfx identity use default

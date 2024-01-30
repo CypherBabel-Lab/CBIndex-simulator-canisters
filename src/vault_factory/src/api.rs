@@ -164,12 +164,13 @@ impl VaultFactoryCanister {
             name: info.name.clone(),
             symbol: info.symbol.clone(),
             supported_tokens,
+            supproted_protocol: None,
             deploy_time: time(),
             shares_token: None,
         };
         self.set_canister_wasm(VAULT_WASM.to_vec())?;
         let vault_principal = self
-            .create_canister((vault_config,), controller, Some(caller_principal.clone()))
+            .create_canister((vault_config,), controller, Some(caller_principal))
             .await?;
         self.set_canister_wasm(TOKEN_WASM.to_vec())?;
         let mut info = info.clone();
@@ -179,7 +180,7 @@ impl VaultFactoryCanister {
         info.fee_to = caller_principal;
         info.is_test_token = Some(false);
         let shares_token_principal = self
-            .create_canister((info, Nat::from(0)), controller, Some(caller_principal.clone()))
+            .create_canister((info, Nat::from(0)), controller, Some(caller_principal))
             .await?;
         let principal_value = PrincipalValue::new(vault_principal, shares_token_principal);
         state::get_state().insert_vault(key, principal_value.clone());
@@ -191,6 +192,16 @@ impl VaultFactoryCanister {
         Ok(())
     }
 
+
+    /// transfers ICP from the caller's account to the factory subaccount.
+    /// The subaccount id can be calculated like this:
+    /// ```ignore
+    /// let mut subaccount = [0u8; 32];
+    /// let principal_id = caller_id.as_slice();
+    /// subaccount[0] = principal_id.len().try_into().unwrap();
+    /// subaccount[1..1 + principal_id.len()].copy_from_slice(principal_id);
+    /// ```
+    /// remember icrc2_appove first
     #[update]
     pub async fn transfer_icp(&self) -> Result<(), VaultFactoryError> {
         let caller_principal = canister_sdk::ic_kit::ic::caller();
@@ -202,9 +213,9 @@ impl VaultFactoryCanister {
             account: Account::from(caller_principal),
             spender: Account::from(canister_id),
         }).await.unwrap().0;
-        // if icp_allowance.allowance < DEFAULT_ICP_FEE {
-        //     return Err(VaultFactoryError::InvalidIcpAllowance);
-        // }
+        if icp_allowance.allowance < DEFAULT_ICP_FEE * 2 {
+            return Err(VaultFactoryError::InvalidIcpAllowance);
+        }
         let transfer_result = icp_token.icrc2_transfer_from(TransferFromArgs {
             spender_subaccount: None,
             from: Account::from(caller_principal),

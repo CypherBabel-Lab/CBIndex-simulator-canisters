@@ -1,4 +1,5 @@
-type Result = variant { Ok; Err : VaultError };
+type Result = variant { Ok : nat64; Err : VaultError };
+type Result_1 = variant { Ok; Err : VaultError };
 type TxError = variant {
   SelfTransfer;
   NothingToClaim;
@@ -16,12 +17,16 @@ type VaultConfig = record {
   deploy_time : nat64;
   owner : principal;
   name : text;
+  supproted_protocol : opt vec principal;
   exchange_rate_canister : principal;
   supported_tokens : vec principal;
   symbol : text;
   shares_token : opt principal;
 };
 type VaultError = variant {
+  TokenAlreadySet;
+  NotController;
+  TokenNotSupported;
   SharesTokenError : TxError;
   InvalidConfiguration : record { text; text };
   AssetNotSupported;
@@ -34,5 +39,6 @@ service : (VaultConfig) -> {
   get_ledger : () -> (VaultLedger) query;
   get_nav : () -> (nat) query;
   pkg_version : () -> (text) query;
-  set_shares_token : (principal) -> (Result);
+  set_shares_token : (principal) -> (Result_1);
+  withdraw : (record {}) -> (Result);
 }

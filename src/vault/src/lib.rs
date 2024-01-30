@@ -3,6 +3,7 @@ pub mod state;
 pub mod exchange_rate;
 pub mod error;
 pub mod icrc;
+pub mod record;
 use candid::Nat;
 pub use ic_exports::icrc_types::icrc1::account::Account as Account;
 pub use ic_exports::icrc_types::icrc1::account::Subaccount as Subaccount;
@@ -22,6 +23,7 @@ pub fn idl() -> String {
         config::VaultConfig,
     };
     use self::error::VaultError;
+    use self::record::Withdraw;
     
     let canister_idl = generate_idl!();
 

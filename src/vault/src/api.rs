@@ -12,6 +12,7 @@ use canister_sdk::{
 use crate::state::config::VaultConfig;
 use crate::state::ledger::VaultLedger;
 use crate::error::VaultError;
+use crate::record::Withdraw;  
 
 #[derive(Clone, Canister)]
 #[canister_no_upgrade_methods]
@@ -74,18 +75,41 @@ impl VaultCanister {
     pub async fn get_nav(&self) -> Nat {
         VaultLedger::get_stable().get_nav().await
     }
-
+    
+    /// only the controller can set the token canister once
+    /// just set the token canister once
     #[update]
     pub fn set_shares_token(&self, token: Principal) -> Result<(), VaultError> {
+        let caller = ic_cdk::caller();
         let mut conf = VaultConfig::get_stable();
+        if conf.owner != caller {
+            return Err(VaultError::NotController);
+        }
+        if conf.shares_token.is_some() {
+            return Err(VaultError::TokenAlreadySet);
+        }
         conf.shares_token = Some(token);
         VaultConfig::set_stable(conf);
         Ok(())
     }
 
     #[update]
-    pub fn deposit(&self, token: Principal, amount: u64) -> Result<(), VaultError> {
-        println!("depositing {} of {}", amount, token);
-        Ok(())
+    pub fn deposit(&self, token: Principal, amount: u64) -> Result<u64, VaultError> {
+        // check if token is supported
+        let conf = VaultConfig::get_stable();
+        if !conf.supported_tokens.contains(&token) {
+            return Err(VaultError::TokenNotSupported);
+        }
+        ic_cdk::println!("depositing {} of {}", amount, token);
+        // cacl aum
+        // cacl nav
+        // mint shares
+        // update ledger
+        Ok(0u64)
+    }
+
+    #[update]
+    pub fn withdraw(&self, _withdraw_args: Withdraw) -> Result<u64, VaultError> {
+        Ok(0u64)
     }
 }
