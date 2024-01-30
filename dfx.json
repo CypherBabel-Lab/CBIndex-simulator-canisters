@@ -39,15 +39,11 @@
       }
     },
     "cbindex_frontend": {
-      "dependencies": [
-        "cbindex_backend"
-      ],
       "frontend": {
         "entrypoint": "index.html"
       },
       "source": [
-        "src/cbindex_frontend/assets",
-        "dist/cbindex_frontend/"
+        "dist/"
       ],
       "type": "assets"
     }

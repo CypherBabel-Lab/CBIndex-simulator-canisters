@@ -1,20 +1,24 @@
-import React, { useEffect, useState } from "react";
-import { Input, Select, Button, Modal, Spin } from "antd";
+import React, { useState } from "react";
+import { Input, Button, Modal, Spin } from "antd";
 import classes from "./style.module.less";
-import { useWallet, useBalance } from "@connect2ic/react"
+import { useWallet } from "@connect2ic/react"
 import { Metadata } from '../../../declarations/vault_factory/vault_factory.did'
 import { Principal } from '@dfinity/principal';
 const rule = /^[a-zA-Z0-9]{3,50}$/;
 import { useCanister } from "@connect2ic/react";
 import MySelect from '../../components/Select/Select'
+import locale from '../../../../.dfx/local/canister_ids.json'
+import { ApproveArgs } from "src/declarations/icp_ledger_canister/icp_ledger_canister.did";
+import token from '../../utils/tokenInfo/token.json'
 const CreateVaultPage = () => {
   const [vault_factory] = useCanister("vault_factory")
+  const [icrc_ledger] = useCanister("icp_ledger_canister")
   const [show, setShow] = useState(true)
   const [createObj, setCreateObj] = useState({
     name: "",
     symbol: "",
   });
-  const [wallet] = useWallet()
+  const [wallet] = useWallet() as any
   const [createModal, setCreateModal] = useState(false);
   const [createStatus, setCreateStatus] = useState({
     status: "create",
@@ -22,44 +26,73 @@ const CreateVaultPage = () => {
   })
   const [nameStatus, setNameStatus] = useState(true);
   const [symbolStatus, setSymbolStatus] = useState(true);
+  const [tokensPrincipal, setTokensPrincipal] = useState([])
   const [tokens, setTokens] = useState([])
-  const createNewVault = async () => {
+  const approve = async () => {
+    let arg: ApproveArgs = {
+      fee: [],
+      memo: [],
+      from_subaccount: [],
+      created_at_time: [],
+      amount: BigInt(500000000),
+      expected_allowance: [],
+      expires_at: [],
+      spender: {
+        owner: Principal.fromText(locale.vault_factory.local),
+        subaccount: [],
+      }
+    }
+    try {
+      await icrc_ledger.icrc2_approve(arg)
+      await vault_factory.transfer_icp()
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  const createVault = async () => {
     setCreateStatus({ ...createStatus, status: "loading" })
     if (!wallet) return
+    await approve()
     const initArgs: Metadata = {
-      fee: BigInt(1),
-      decimals: 16,
+      fee: BigInt("10000"),
+      decimals: 8,
       fee_to: Principal.fromText(wallet.principal),
       owner: Principal.fromText(wallet.principal),
       name: createObj.name,
       symbol: createObj.symbol,
       is_test_token: [false],
     };
-    try {
-      const resut = await vault_factory.create_vault(initArgs, [...tokens], [], []) as any
+    vault_factory.create_vault(initArgs, [...tokensPrincipal], [], []).then((resut: any) => {
       if (resut.Ok) {
         setCreateStatus({ ...createStatus, status: "success" })
       } else {
-        switch (JSON.stringify(resut)) {
-          case '{"Err":{"AlreadyExists":null}}':
+        switch (Object.keys(resut.Err)[0]) {
+          case "FactoryError":
+            switch (Object.keys(resut.Err.FactoryError)[0]) {
+              case "NotEnoughIcp":
+                setCreateStatus({ msg: "Not Enough Icp!", status: "error" })
+                break
+              default:
+                setCreateStatus({ msg: "create Error!", status: "error" })
+            }
+            break
+          case "AlreadyExists":
             setCreateStatus({ msg: "Name Already Exists!", status: "error" })
             break
           default:
-            setCreateStatus({ ...createStatus, status: "error" })
+            setCreateStatus({ msg: "create Error!", status: "error" })
         }
       }
-    } catch (e) {
-      console.log(e);
-      setCreateStatus({ ...createStatus, status: "error" })
-    }
+    })
   };
-
   const getSelectTokenArrayFuc = (tokensArray: Array<string>) => {
+    setTokens(tokensArray)
     let t = []
     for (let i = 0; i < tokensArray.length; i++) {
       t.push(Principal.fromText(tokensArray[i]))
     }
-    setTokens(t)
+    setTokensPrincipal(t)
   }
   const refresh = () => {
     setCreateObj({ name: "", symbol: "" })
@@ -71,7 +104,7 @@ const CreateVaultPage = () => {
   const createOkModalEvt = () => {
     switch (createStatus.status) {
       case "create":
-        createNewVault()
+        createVault()
         break
       case "success":
         setCreateModal(false)
@@ -113,7 +146,7 @@ const CreateVaultPage = () => {
               )}
             </div>
             <div className={classes.createItem}>
-              <div className={classes.title}>Symbol</div>
+              <div className={classes.title}>Symbol </div>
               <Input
                 onChange={(e) => {
                   setCreateObj({ ...createObj, symbol: e.target.value });
@@ -145,7 +178,7 @@ const CreateVaultPage = () => {
                   createObj.name === "" ||
                   createObj.symbol === "" ||
                   !nameStatus ||
-                  !symbolStatus || !tokens.length
+                  !symbolStatus || !tokensPrincipal.length
                 }
                 onClick={() => {
                   setCreateModal(true);
@@ -198,7 +231,10 @@ const CreateVaultPage = () => {
               </div>
               <div>
                 Create a new active fund named {createObj.name} with symbol{" "}
-                {createObj.symbol} and denomination asset DAI.
+                {createObj.symbol} and supported tokens {tokens.map((it, index) => {
+                  if (index === tokens.length - 1) return <>{token[it].symbol}</>
+                  return <>{token[it].symbol},</>
+                })}.
               </div>
             </div>
           )}
