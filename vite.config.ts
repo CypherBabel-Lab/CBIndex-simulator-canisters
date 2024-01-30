@@ -22,7 +22,7 @@ try {
       .toString(),
   )
 } catch (e) {
-    console.error("\n⚠️  Before starting the dev server run: dfx deploy\n\n")
+  console.error("\n⚠️  Before starting the dev server run: dfx deploy\n\n")
 }
 
 // List of all aliases for canisters
@@ -65,6 +65,9 @@ const DFX_PORT = dfxJson.networks.local.bind.split(":")[1]
 // See guide on how to configure Vite at:
 // https://vitejs.dev/config/
 export default defineConfig({
+  build: {
+    target: ["esnext"], // 👈 build.target
+  },
   plugins: [reactRefresh()],
   resolve: {
     alias: {

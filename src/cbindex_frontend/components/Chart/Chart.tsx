@@ -1,36 +1,12 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import * as LightweightCharts from "lightweight-charts";
 import classes from './style.module.less'
+import changeSize from "../../utils/changeSize/changeSize";
 let series: any
 let firstChart: any = null
-function ChangeSize() {
-  if (typeof window !== "undefined") {
-    const [size, setSize] = useState({
-      width: document.documentElement.clientWidth,
-      hieght: document.documentElement.clientHeight,
-    });
-
-    const onResize = useCallback(() => {
-      setSize({
-        width: document.documentElement.clientWidth,
-        height: document.documentElement.clientHeight,
-      } as any);
-    }, []);
-
-    useEffect(() => {
-      window.addEventListener("resize", onResize);
-      return () => {
-        window.removeEventListener("resize", onResize);
-      };
-    }, []);
-
-    return size;
-  }
-}
 const Chart = ({ lineData }: any) => {
-  let width = ChangeSize()?.width
+  let width = changeSize()?.width
   const chart = useRef(null) as any
-
   useEffect(() => {
     createChartDom()
   }, [])
@@ -88,7 +64,6 @@ const Chart = ({ lineData }: any) => {
       firstChart.resize(chart.current.offsetWidth, 500)
     }
   }, [width])
-
   return <>
     <div ref={chart} className={classes.chartBox}>
     </div>

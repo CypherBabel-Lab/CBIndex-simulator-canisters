@@ -5,6 +5,7 @@ import { ConnectDialog, Connect2ICProvider } from "@connect2ic/react"
 import "@connect2ic/core/style.css"
 import VaultsPage from './pages/VaultsPage/VaultsPage'
 import * as vault_factory from '../declarations/vault_factory'
+import * as icp_ledger_canister from '../declarations/icp_ledger_canister'
 import { ConfigProvider, theme } from "antd";
 import Layout from "./components/Layout/Layout/Layout"
 import { Routes, Route } from "react-router-dom"
@@ -26,6 +27,7 @@ function App() {
 const client = createClient({
   canisters: {
     vault_factory,
+    icp_ledger_canister
   },
   providers: defaultProviders,
   globalProviderConfig: {

@@ -233,7 +233,6 @@ button {
     display: inline-block;
     background-color: transparent;
     border-radius: 6px;
-    /* transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1); */
 }
 
 .ant-segmented .ant-segmented-item:hover {
@@ -243,6 +242,22 @@ button {
 .ant-segmented .ant-segmented-item-selected {
     background-color: var(--bg-third-color);
     color: var(--text-second-color);
+}
+
+.iconImg {
+    width: 20px;
+    height: 20px;
+    border-radius: 99999999px;
+    margin-right: 4px;
+}
+
+.myCreateLabel {
+    background-color: var(--primary-green);
+    opacity: 0.8;
+    border-radius: 2px;
+    font-size: 10px;
+    padding: 2px;
+    line-height: 1
 }
 
 @keyframes pulse {
