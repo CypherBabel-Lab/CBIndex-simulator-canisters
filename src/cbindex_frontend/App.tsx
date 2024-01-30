@@ -8,10 +8,10 @@ import * as vault_factory from '../declarations/vault_factory'
 import * as icp_ledger_canister from '../declarations/icp_ledger_canister'
 import { ConfigProvider, theme } from "antd";
 import Layout from "./components/Layout/Layout/Layout"
-import { Routes, Route } from "react-router-dom"
+import { Routes, Route, } from "react-router-dom"
 import DetailsPage from "./pages/DetailsPage/DetailsPage"
 import CreateActiveFund from "./pages/CreateVaultPage/CreateVaultPage"
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, Navigate } from 'react-router-dom';
 function App() {
   return (
     <div className="App">
@@ -19,6 +19,7 @@ function App() {
         <Route path="/vaults" element={<VaultsPage />}></Route>
         <Route path="/createactivefund" element={< CreateActiveFund />}></Route>
         <Route path="/details" element={< DetailsPage />}></Route>
+        <Route path="*" element={<Navigate to="/vaults" replace />} />
       </Routes>
       <ConnectDialog />
     </div>
