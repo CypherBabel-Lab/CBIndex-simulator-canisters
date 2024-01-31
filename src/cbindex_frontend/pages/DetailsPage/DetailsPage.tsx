@@ -27,13 +27,12 @@ const DetailsPage = () => {
     let vault = createActor(params.getAll("vaultAddress")[0])
     let config = await vault.get_config() as any
     config.owner = config.owner.toString()
-    for (let i = 0; i < config.supported_tokens.length; i++) {
-
-      config.supported_tokens[i] = config.supported_tokens[i].toString()
-    }
     const millisecondsTimestamp = Number(config.deploy_time) / 1e6;
     const date = new Date(millisecondsTimestamp);
     config.deploy_time = getTimeDistanceFromNow(date)
+    for (let i = 0; i < config.supported_tokens.length; i++) {
+      config.supported_tokens[i] = config.supported_tokens[i].toString()
+    }
     setDataSource(config)
   }
   useEffect(() => {
@@ -110,8 +109,6 @@ const DetailsPage = () => {
       ),
     },
   ];
-
-
   return (
     <>
       <div className={classes.detailsPageContainer}>
