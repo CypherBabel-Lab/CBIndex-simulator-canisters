@@ -46,10 +46,10 @@ const CreateVaultPage = () => {
       await icrc_ledger.icrc2_approve(arg)
       await vault_factory.transfer_icp()
     } catch (e) {
-      console.log(e);
+      setCreateStatus({ msg: "Approve Error!", status: "error" })
+      throw Error("CBIndex:Approve Error!")
     }
   }
-
   const createVault = async () => {
     setCreateStatus({ ...createStatus, status: "loading" })
     if (!wallet) return
@@ -83,6 +83,7 @@ const CreateVaultPage = () => {
           default:
             setCreateStatus({ msg: "create Error!", status: "error" })
         }
+        throw Error("CBIndex:Create Error!")
       }
     })
   };
@@ -232,8 +233,8 @@ const CreateVaultPage = () => {
               <div>
                 Create a new active fund named {createObj.name} with symbol{" "}
                 {createObj.symbol} and supported tokens {tokens.map((it, index) => {
-                  if (index === tokens.length - 1) return <>{token[it].symbol}</>
-                  return <>{token[it].symbol},</>
+                  if (index === tokens.length - 1) return <span key={it}>{token[it].symbol}</span>
+                  return <span key={it}>{token[it].symbol},</span>
                 })}.
               </div>
             </div>

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from "react";
+import React, {useRef, useEffect} from "react";
 import * as LightweightCharts from "lightweight-charts";
 import classes from './style.module.less'
 import changeSize from "../../utils/changeSize/changeSize";
