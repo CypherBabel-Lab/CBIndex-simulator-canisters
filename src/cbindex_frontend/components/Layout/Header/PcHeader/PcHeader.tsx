@@ -2,16 +2,40 @@ import React, { useEffect, useState } from "react";
 import classes from "./style.module.less";
 import Logo from "../Header/Logo/Logo";
 import SoundNotice from "../SoundNotice/SoundNotice";
-import { ConnectButton, ConnectDialog, Connect2ICProvider } from "@connect2ic/react"
+import { ConnectButton, ConnectDialog, useWallet, useConnect, useDialog, useProviders } from "@connect2ic/react"
 const headerMenuList = [
   {
     key: "/vaults",
-    label: "Active Fund",
+    label: "Copy Fund",
     pathname: "/activefund/[...page]",
   },
 ];
 import { Link } from "react-router-dom";
 const PcHeadr = () => {
+  const { open, close, isOpen } = useDialog()
+  const {
+    principal,
+    connect,
+    disconnect,
+    status,
+    isInitializing,
+    isIdle,
+    isConnecting,
+    isConnected,
+    isDisconnecting,
+    activeProvider,
+  } = useConnect({
+    onConnect: () => {
+      // Signed in
+    },
+    onDisconnect: () => {
+      // Signed out
+    }
+  })
+  const [wallet] = useWallet()
+  const [providers] = useProviders()
+  // console.log(wallet);
+  // console.log(providers);
   return (
     <div className={classes.container}>
       <div className={classes.headerTopLayer}>
@@ -44,7 +68,18 @@ const PcHeadr = () => {
             })}
           </div>
           <div>
-            <ConnectButton />
+            {
+              wallet ? <div className="walletBtn" onClick={() => {
+                disconnect()
+              }}>
+                Disconnect
+              </div> :
+                <div className="walletBtn" onClick={() => {
+                  open()
+                }}>
+                  Connect
+                </div>
+            }
           </div>
 
         </div>

@@ -5,6 +5,7 @@ import classes from "./style.module.less";
 import { Link } from "react-router-dom";
 import Tokenimg from '../../../components/Tokenimg/Tokenimg'
 import truncateString from '../../../utils/Sting/truncateString'
+import shareIcon from '../../../public/icon/share.png'
 const VaultsTable = ({ dataSource, loading, total, setPage, address }: any) => {
   const columns = [
     {
@@ -38,6 +39,20 @@ const VaultsTable = ({ dataSource, loading, total, setPage, address }: any) => {
         return (
           <div className={classes.denominationAssetColumn}>
             <Tokenimg tokens={tokens} />
+          </div>
+        );
+      },
+    },
+    {
+      title: "Supported Tokens",
+      dataIndex: "canisterId",
+      key: "canisterId",
+      render: (canisterId: string) => {
+        return (
+          <div className={classes.canisterIdLabel} onClick={() => {
+            window.open("https://dashboard.internetcomputer.org/canister/" + canisterId)
+          }}>
+            {canisterId}  <img src={shareIcon} width={14} height={14} alt="" />
           </div>
         );
       },

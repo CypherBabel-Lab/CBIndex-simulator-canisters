@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Input, Button, Modal, Spin } from "antd";
 import classes from "./style.module.less";
-import { useWallet } from "@connect2ic/react"
+import { useWallet, useBalance } from "@connect2ic/react"
 import { Metadata } from '../../../declarations/vault_factory/vault_factory.did'
 import { Principal } from '@dfinity/principal';
 const rule = /^[a-zA-Z0-9]{3,50}$/;
@@ -11,6 +11,8 @@ import locale from '../../../../.dfx/local/canister_ids.json'
 import { ApproveArgs } from "src/declarations/icp_ledger_canister/icp_ledger_canister.did";
 import token from '../../utils/tokenInfo/token.json'
 const CreateVaultPage = () => {
+  const [balance] = useBalance()
+  console.log(balance);
   const [vault_factory] = useCanister("vault_factory")
   const [icrc_ledger] = useCanister("icp_ledger_canister")
   const [show, setShow] = useState(true)
@@ -26,6 +28,7 @@ const CreateVaultPage = () => {
   })
   const [nameStatus, setNameStatus] = useState(true);
   const [symbolStatus, setSymbolStatus] = useState(true);
+  const [nameAlreadyExists, setNameAlreadyExists] = useState(false)
   const [tokensPrincipal, setTokensPrincipal] = useState([])
   const [tokens, setTokens] = useState([])
   const approve = async () => {
@@ -46,7 +49,7 @@ const CreateVaultPage = () => {
       await icrc_ledger.icrc2_approve(arg)
       await vault_factory.transfer_icp()
     } catch (e) {
-      setCreateStatus({ msg: "Approve Error!", status: "error" })
+      setCreateStatus({ msg: "Wallet declined the action!", status: "error" })
       throw Error("CBIndex:Approve Error!")
     }
   }
@@ -66,19 +69,22 @@ const CreateVaultPage = () => {
     vault_factory.create_vault(initArgs, [...tokensPrincipal], [], []).then((resut: any) => {
       if (resut.Ok) {
         setCreateStatus({ ...createStatus, status: "success" })
+        vault_factory.refund_icp().then(d => {
+          console.log(d);
+        })
       } else {
         switch (Object.keys(resut.Err)[0]) {
           case "FactoryError":
             switch (Object.keys(resut.Err.FactoryError)[0]) {
               case "NotEnoughIcp":
-                setCreateStatus({ msg: "Not Enough Icp!", status: "error" })
+                setCreateStatus({ msg: "Not Enough ICP!", status: "error" })
                 break
               default:
-                setCreateStatus({ msg: "create Error!", status: "error" })
+                setCreateStatus({ msg: "Create Error!", status: "error" })
             }
             break
           case "AlreadyExists":
-            setCreateStatus({ msg: "Name Already Exists!", status: "error" })
+            setCreateStatus({ msg: "Name already exists!", status: "error" })
             break
           default:
             setCreateStatus({ msg: "create Error!", status: "error" })
@@ -129,10 +135,20 @@ const CreateVaultPage = () => {
                 onChange={(e) => {
                   setCreateObj({ ...createObj, name: e.target.value });
                 }}
-                status={!nameStatus ? "error" : ""}
+                status={!nameStatus || nameAlreadyExists ? "error" : ""}
                 onBlur={(e) => {
                   if (!e.target.value) return;
+                  console.log(rule.test(e.target.value));
                   setNameStatus(rule.test(e.target.value));
+                  if (rule.test(e.target.value)) {
+                    vault_factory.get_vault(e.target.value).then((d: any) => {
+                      console.log(d.length);
+                      setNameAlreadyExists(d.length)
+                    })
+                  } else {
+                    setNameStatus(rule.test(e.target.value));
+                    setNameAlreadyExists(false)
+                  }
                 }}
                 value={createObj.name}
               />
@@ -145,6 +161,15 @@ const CreateVaultPage = () => {
                   Name does not meet the requirements (3-50 characters).
                 </div>
               )}
+              {
+                nameAlreadyExists ?
+                  <div style={{
+                    color: "#dc4446",
+                  }}>
+                    Name already exists!
+                  </div>
+                  : ""
+              }
             </div>
             <div className={classes.createItem}>
               <div className={classes.title}>Symbol </div>
@@ -179,7 +204,7 @@ const CreateVaultPage = () => {
                   createObj.name === "" ||
                   createObj.symbol === "" ||
                   !nameStatus ||
-                  !symbolStatus || !tokensPrincipal.length
+                  !symbolStatus || !tokensPrincipal.length || nameAlreadyExists
                 }
                 onClick={() => {
                   setCreateModal(true);
@@ -203,7 +228,6 @@ const CreateVaultPage = () => {
           onCancel={() => {
             setCreateModal(false);
             setCreateStatus({ ...createStatus, status: "create" })
-
           }}
           maskClosable={false}
           cancelButtonProps={{
@@ -228,29 +252,32 @@ const CreateVaultPage = () => {
                   marginBottom: "10px",
                 }}
               >
-                Create Active Fund
+                Create Copy Fund
               </div>
               <div>
-                Create a new active fund named {createObj.name} with symbol{" "}
+                Create a new copy fund named {createObj.name} with symbol{" "}
                 {createObj.symbol} and supported tokens {tokens.map((it, index) => {
                   if (index === tokens.length - 1) return <span key={it}>{token[it].symbol}</span>
                   return <span key={it}>{token[it].symbol},</span>
                 })}.
               </div>
+              <div style={{
+                color: "orange"
+              }}>This action requires 5 ICPs to proceed. In most cases, there will be remainings after the execution, which will be sent back to your wallet.</div>
             </div>
           )}
           {createStatus.status == 'loading' && (
             <div className={classes.createFundSpinContainer}>
               <Spin />
               <div className={classes.spinLoadingText}>
-                Creating an active fund...
+                Creating a copy fund...
               </div>
             </div>
           )}
           {createStatus.status === 'success' && (
             <>
               <div className={classes.createModalText}>
-                Successfully created an active fund! You can find it in "Invest
+                Successfully created a copy fund! You can find it in "Invest
                 in Fund".
               </div>
             </>

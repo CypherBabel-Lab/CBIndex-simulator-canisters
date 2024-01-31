@@ -22,6 +22,7 @@ const VaultsPage = () => {
             initList.push(config)
         }
         initList.sort((a, b) => Number(b.deploy_time) - Number(a.deploy_time))
+        console.log(initList);
         setDataSource(initList)
         setLoading(!loading)
     }

@@ -1,6 +1,7 @@
 import React, { useEffect } from "react"
 import { createClient } from "@connect2ic/core"
 import { defaultProviders } from "@connect2ic/core/providers"
+import { PlugWallet } from "@connect2ic/core/providers/plug-wallet"
 import { ConnectDialog, Connect2ICProvider } from "@connect2ic/react"
 import "@connect2ic/core/style.css"
 import VaultsPage from './pages/VaultsPage/VaultsPage'
@@ -25,12 +26,20 @@ function App() {
     </div>
   )
 }
+const provider = new PlugWallet({
+  // boolean
+  dev: true,
+  // whitelisted canisters
+  whitelist: [],
+  // The host used for canisters
+  host: window.location.origin,
+})
 const client = createClient({
   canisters: {
     vault_factory,
     icp_ledger_canister
   },
-  providers: defaultProviders,
+  providers: [provider],
   globalProviderConfig: {
     dev: import.meta.env.DEV,
   },

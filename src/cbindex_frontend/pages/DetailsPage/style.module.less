@@ -12,8 +12,7 @@
   align-items: center;
 }
 
-.dedtailsHeaderLeft {
-}
+// .dedtailsHeaderLeft {}
 
 .dedtailsHeaderRight {
   display: flex;
@@ -23,17 +22,23 @@
 .fundName {
   font-size: 20px;
   font-weight: 600;
-  margin: var(--margin-md) 0;
+  margin: var(--margin-md) var(--margin-sm) var(--margin-md) 0px;
 }
 
 .walletAddrAera {
   color: var(--text-third-color);
   display: flex;
   align-items: center;
+  cursor: pointer;
 }
 
 .walletAddr {
   margin-right: var(--margin-sm);
+  cursor: pointer;
+}
+
+.walletAddr:hover {
+  color: #fff;
 }
 
 .ownerSpan {

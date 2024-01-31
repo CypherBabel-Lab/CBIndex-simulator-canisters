@@ -11,9 +11,7 @@ const Header = () => {
         className={`${"md:hidden flex"}
           }`}
       >
-        <PcHeader
-        />
- 
+        <PcHeader />
       </div>
     </div>
   );

@@ -7,7 +7,7 @@ import classes from "./style.module.less";
 const PcHeaderMenu = () => {
   // const router = useRouter();
   // const headerMenuList = [
-  //   { key: "/vaults", label: "Active Fund", pathname: RouterPathName.Vaults },
+  //   { key: "/vaults", label: "Copy Fund", pathname: RouterPathName.Vaults },
   // ];
 
   return (

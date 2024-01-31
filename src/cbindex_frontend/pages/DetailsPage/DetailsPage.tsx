@@ -19,7 +19,12 @@ import AssetTable from "./TableType/AssetTable/AssetTable";
 import DepositorTable from './TableType/DepositorTable/DepositorTable'
 import Chart from "../../components/Chart/Chart";
 import Tokenimg from "../../components/Tokenimg/Tokenimg";
+import imge from '../../public/icon/share.png'
+import { Principal } from '@dfinity/principal';
+import { AccountIdentifier } from '@dfinity/ledger-icp';
+import { useWallet, useConnect } from "@connect2ic/react";
 const DetailsPage = () => {
+  const [wallet] = useWallet()
   const navigate = useNavigate();
   const [params] = useSearchParams()
   const [dataSource, setDataSource] = useState({} as any)
@@ -134,11 +139,37 @@ const DetailsPage = () => {
         </div>
         <div className={classes.detailsHeadedr}>
           <div className={classes.dedtailsHeaderLeft}>
-            <div className={classes.fundName}>
-              {dataSource.name}
+            <div style={{
+              display: "flex"
+            }}
+            >
+              <div className={classes.fundName}>
+                {dataSource.name}
+              </div>
+              <div className={classes.walletAddrAera}
+                onClick={() => {
+                  window.open("https://dashboard.internetcomputer.org/canister/" + params.getAll("vaultAddress")[0])
+                }}
+              >
+                <span className={classes.walletAddr}
+                  style={{
+                    marginLeft: "4px"
+                  }
+                  }>
+                  {params.getAll("vaultAddress")[0]}
+                  <img style={{
+                    marginLeft: "4px"
+                  }} src={imge} width={14} height={14} alt="" />
+                </span>
+
+              </div>
             </div>
             <div className={classes.walletAddrAera}>
-              <span className={classes.walletAddr}>{dataSource.owner}</span>
+              <span className={classes.walletAddr}
+                onClick={() => {
+                  window.open("https://dashboard.internetcomputer.org/account/" + AccountIdentifier.fromPrincipal({ principal: Principal.fromText(wallet.principal) }).toHex())
+                }}
+              >{dataSource.owner} <img src={imge} width={14} height={14} alt="" /></span>
               <span className={classes.ownerSpan}>Fund Creator & Manager</span>
             </div>
           </div>
