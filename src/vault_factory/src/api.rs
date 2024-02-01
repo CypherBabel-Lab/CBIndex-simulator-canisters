@@ -98,31 +98,6 @@ impl VaultFactoryCanister {
         state::get_state().get_vaults()
     }
 
-    /// Creates a new vault.
-    ///
-    /// Creating a vault canister with the factory requires one of the following:
-    /// * the call must be made through a cycles wallet with enough cycles to cover the canister
-    ///   expenses. The amount of provided cycles must be greater than `10^12`. Most of the cycles
-    ///   will be added to the newly created canister balance, while some will be consumed by the
-    ///   factory
-    /// * the caller must transfer some amount of ICP to their subaccount into the ICP ledger factory account.
-    ///   The subaccount id can be calculated like this:
-    ///
-    /// ```ignore
-    /// let mut subaccount = [0u8; 32];
-    /// let principal_id = caller_id.as_slice();
-    /// subaccount[0] = principal_id.len().try_into().unwrap();
-    /// subaccount[1..1 + principal_id.len()].copy_from_slice(principal_id);
-    /// ```
-    ///
-    /// The amount of provided ICP must be greater than the `icp_fee` factory property. This value
-    /// can be obtained by the `get_icp_fee` query method. The ICP fees are transferred to the
-    /// principal designated by the factory controller. The canister is then created with some
-    /// minimum amount of cycles.
-    ///
-    /// If the provided ICP amount is greater than required by the factory, extra ICP will not be
-    /// consumed and can be used to create more canisters, or can be reclaimed by calling `refund_icp`
-    /// method.
     #[update]
     pub async fn create_vault(
         &self,
@@ -171,7 +146,7 @@ impl VaultFactoryCanister {
         self.set_canister_wasm(VAULT_WASM.to_vec())?;
         let vault_principal = self
             .create_canister((vault_config,), controller, Some(caller_principal))
-            .await?;
+            .await?;  //create a valut canister
         self.set_canister_wasm(TOKEN_WASM.to_vec())?;
         let mut info = info.clone();
         info.owner = caller_principal;
@@ -181,7 +156,7 @@ impl VaultFactoryCanister {
         info.is_test_token = Some(false);
         let shares_token_principal = self
             .create_canister((info, Nat::from(0)), controller, Some(caller_principal))
-            .await?;
+            .await?;  // create a token canister
         let principal_value = PrincipalValue::new(vault_principal, shares_token_principal);
         state::get_state().insert_vault(key, principal_value.clone());
         Ok(principal_value)
