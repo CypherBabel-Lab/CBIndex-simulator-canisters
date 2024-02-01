@@ -19,8 +19,9 @@ echo "--------------transfer $DEPOSIT_ICP_AMOUNT icp to vault factory-----------
 dfx canister call $ICP_LEDGER icrc2_approve "(record {spender = record { owner = principal \"$VAULT_FACTORY\";};amount = $DEPOSIT_ICP_AMOUNT; })"
 dfx canister call $VAULT_FACTORY transfer_icp
 echo "--------------vault creator balance: $(dfx ledger balance)-----------------"
-CKBTC="mc6ru-gyaaa-aaaar-qaaaq-cai"
-dfx canister call $VAULT_FACTORY create_vault "(record {symbol = \"test_1\";name=\"tname_1\";decimals = 8; owner = principal \"$PRINCIPAL\"; fee = 10000; fee_to = principal \"$PRINCIPAL\";null}, vec {principal \"$CKBTC\"}, null, null)"
+CKBTC="mxzaz-hqaaa-aaaar-qaada-cai"
+CKETH="ss2fx-dyaaa-aaaar-qacoq-cai"
+dfx canister call $VAULT_FACTORY create_vault "(record {symbol = \"test_1\";name=\"tname_1\";decimals = 8; owner = principal \"$PRINCIPAL\"; fee = 10000; fee_to = principal \"$PRINCIPAL\";null}, vec {principal \"$CKBTC\"; principal \"$CKETH\"}, null, null)"
 echo "--------------withdraw remain icp from vault factory---------------"
 dfx canister call $VAULT_FACTORY refund_icp
 echo "--------------vault creator balance: $(dfx ledger balance)-----------------"
