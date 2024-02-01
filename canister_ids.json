@@ -1,0 +1,11 @@
+{
+  "cbindex_frontend": {
+    "ic": "yiyv4-ryaaa-aaaam-ab5iq-cai"
+  },
+  "icp_ledger_canister": {
+    "ic": "ryjl3-tyaaa-aaaaa-aaaba-cai"
+  },
+  "vault_factory": {
+    "ic": "ypzti-4aaaa-aaaam-ab5ia-cai"
+  }
+}

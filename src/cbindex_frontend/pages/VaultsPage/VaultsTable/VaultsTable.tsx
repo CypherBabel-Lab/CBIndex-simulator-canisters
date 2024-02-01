@@ -44,7 +44,7 @@ const VaultsTable = ({ dataSource, loading, total, setPage, address }: any) => {
       },
     },
     {
-      title: "Supported Tokens",
+      title: "Canister ID",
       dataIndex: "canisterId",
       key: "canisterId",
       render: (canisterId: string) => {
