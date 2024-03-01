@@ -1,6 +1,7 @@
 use std::{cell::RefCell, borrow::Cow};
 
-use candid::{Principal, CandidType,Deserialize, Encode, Decode, Nat};
+use candid::{CandidType,Deserialize, Encode, Decode, Nat};
+use ic_exports::ic_cdk;
 use ic_stable_structures::{MemoryId,StableCell,Storable};
 use crate::exchange_rate:: {
     AssetClass,
@@ -13,11 +14,22 @@ use crate::exchange_rate:: {
 use crate:: state::config::VaultConfig;
 use crate:: icrc::icrc1::Icrc1;
 use crate:: icrc::icrc2;
-use crate:: icrc::utils;
 use crate:: Account;
+
+use super::config::SupportedToken;
+
+const LEDGER_MEMORY_ID: MemoryId = MemoryId::new(1);
+
+thread_local! {
+    static VAULT_LEDGER_CELL: RefCell<StableCell<VaultLedger>> = {
+            RefCell::new(StableCell::new(LEDGER_MEMORY_ID, VaultLedger::default())
+                .expect("stable memory vault ledger initialization failed"))
+    }
+}
+
 #[derive(Deserialize, CandidType, Clone, Debug)]
 pub struct VaultLedger {
-    pub tokens: Option<Vec<Principal>>,
+    pub tokens: Option<Vec<SupportedToken>>,
 }
 
 impl Default for VaultLedger {
@@ -54,16 +66,16 @@ impl VaultLedger {
         match self.tokens.clone() {
             Some(tokens) => {
                 let mut aum = Nat::from(0);
+                let mut if_error = false;
                 for token in tokens {
-                    let icrc = icrc2::Icrc2Token::new(token);
-                    let symbol = icrc.icrc1_symbol().await.unwrap().0;
+                    let icrc = icrc2::Icrc2Token::new(token.canister_id.clone());
                     let decimals_token = icrc.icrc1_decimals().await.unwrap().0;
-                    let balance = icrc.icrc1_balance_of(utils::account_transformer(Account::from(VaultConfig::get_stable().owner))).await.unwrap().0;
+                    let balance = icrc.icrc1_balance_of(Account::from(ic_cdk::id())).await.unwrap().0;
                     let exchange_rate_result = Service::new(VaultConfig::get_stable().exchange_rate_canister.clone()).get_exchange_rate(GetExchangeRateRequest{
                         timestamp: None,
                         quote_asset: Asset{
                             class: AssetClass::Cryptocurrency,
-                            symbol,
+                            symbol: token.symbol.clone(),
                         },
                         base_asset: Asset{
                             class: AssetClass::FiatCurrency,
@@ -79,14 +91,19 @@ impl VaultLedger {
                             aum = aum + balance * exchange_rate;
                         },
                         GetExchangeRateResult::Err(_) => {
-                            continue;
+                            ic_cdk::print("get exchange rate error");
+                            if_error = true;
                         }
                         
-                    }
+                    };
                 }
-                aum
+                if if_error {
+                    Nat::from(0)
+                } else {
+                    aum
+                }
             },
-            None => Nat::from(0),
+            None => Nat::from(100),
         }
     }
 
@@ -102,22 +119,13 @@ impl VaultLedger {
         }
     }
 
-    pub fn get_tokens(&self) -> Vec<Principal> {
+    pub fn get_tokens(&self) -> Vec<SupportedToken> {
         self.tokens.clone().unwrap_or(vec![])
     }
 
-    pub fn add_token(&mut self, token: Principal) {
+    pub fn add_token(&mut self, token: SupportedToken) {
         let mut tokens = self.tokens.clone().unwrap_or(vec![]);
         tokens.push(token);
         self.tokens = Some(tokens);
-    }
-}
-
-const LEDGER_MEMORY_ID: MemoryId = MemoryId::new(1);
-
-thread_local! {
-    static VAULT_LEDGER_CELL: RefCell<StableCell<VaultLedger>> = {
-            RefCell::new(StableCell::new(LEDGER_MEMORY_ID, VaultLedger::default())
-                .expect("stable memory vault ledger initialization failed"))
     }
 }

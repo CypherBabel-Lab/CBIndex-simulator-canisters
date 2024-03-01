@@ -22,6 +22,7 @@ pub fn idl() -> String {
     use ic_exports::Principal;
     use std::collections::HashMap;
     use token::state::config::Metadata;
+    use vault::state::config::SupportedToken;
 
 
     let canister_idl = generate_idl!();

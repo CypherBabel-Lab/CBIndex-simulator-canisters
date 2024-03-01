@@ -21,7 +21,7 @@ dfx canister call $VAULT_FACTORY transfer_icp
 echo "--------------vault creator balance: $(dfx ledger balance)-----------------"
 CKBTC="mxzaz-hqaaa-aaaar-qaada-cai"
 CKETH="ss2fx-dyaaa-aaaar-qacoq-cai"
-dfx canister call $VAULT_FACTORY create_vault "(record {symbol = \"test_1\";name=\"tname_1\";decimals = 8; owner = principal \"$PRINCIPAL\"; fee = 10000; fee_to = principal \"$PRINCIPAL\";null}, vec {principal \"$CKBTC\"; principal \"$CKETH\"}, null, null)"
+dfx canister call $VAULT_FACTORY create_vault "(record {symbol = \"test_1\";name=\"tname_1\";decimals = 8; owner = principal \"$PRINCIPAL\"; fee = 10000; fee_to = principal \"$PRINCIPAL\";null}, vec {record { canister_id = principal \"$CKBTC\"; symbol = \"BTC\" }; record { canister_id = principal \"$CKETH\"; symbol = \"ETH\" } }, null, null)"
 echo "--------------withdraw remain icp from vault factory---------------"
 dfx canister call $VAULT_FACTORY refund_icp
 echo "--------------vault creator balance: $(dfx ledger balance)-----------------"

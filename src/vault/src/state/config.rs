@@ -3,13 +3,29 @@ use std::{cell::RefCell, borrow::Cow};
 use candid::{Principal, Encode, Decode, CandidType, Deserialize};
 use ic_stable_structures::{MemoryId, StableCell, Storable};
 
+const CONFIG_MEMORY_ID: MemoryId = MemoryId::new(0);
+
+thread_local! {
+    static VAULT_CONFIG_CELL: RefCell<StableCell<VaultConfig>> = {
+            RefCell::new(StableCell::new(CONFIG_MEMORY_ID, VaultConfig::default())
+                .expect("stable memory vault config initialization failed"))
+    }
+}
+
+#[derive(Deserialize, CandidType, Clone, Debug)]
+#[derive(PartialEq)]
+pub struct SupportedToken {
+    pub canister_id: Principal,
+    pub symbol: String,
+}
+
 #[derive(Deserialize, CandidType, Clone, Debug)]
 pub struct VaultConfig {
     pub name: String,
     pub symbol: String,
     pub owner: Principal,
     pub deploy_time: u64,
-    pub supported_tokens: Vec<Principal>,
+    pub supported_tokens: Vec<SupportedToken>,
     pub supproted_protocol: Option<Vec<Principal>>,
     pub shares_token: Option<Principal>,
     pub exchange_rate_canister: Principal,
@@ -50,14 +66,5 @@ impl VaultConfig {
     pub fn set_stable(config: VaultConfig) {
         VAULT_CONFIG_CELL.with(|c| c.borrow_mut().set(config))
             .expect("unable to set vault config to stable memory")
-    }
-}
-
-const CONFIG_MEMORY_ID: MemoryId = MemoryId::new(0);
-
-thread_local! {
-    static VAULT_CONFIG_CELL: RefCell<StableCell<VaultConfig>> = {
-            RefCell::new(StableCell::new(CONFIG_MEMORY_ID, VaultConfig::default())
-                .expect("stable memory vault config initialization failed"))
     }
 }

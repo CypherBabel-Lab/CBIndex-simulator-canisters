@@ -33,6 +33,7 @@ type Result_3 = variant { Ok : text; Err : FactoryError };
 type Result_4 = variant { Ok : nat64; Err : FactoryError };
 type Result_5 = variant { Ok; Err : FactoryError };
 type Result_6 = variant { Ok : nat32; Err : FactoryError };
+type SupportedToken = record { canister_id : principal; symbol : text };
 type TransferFromError = variant {
   GenericError : record { message : text; error_code : nat };
   TemporarilyUnavailable;
@@ -71,9 +72,12 @@ service : (principal, opt principal) -> {
   set_icp_to : (principal) -> (Result_5);
   top_up : () -> (nat64);
   version : () -> (Result_6) query;
-  create_vault : (Metadata, vec principal, opt principal, opt principal) -> (
-      Result,
-    );
+  create_vault : (
+      Metadata,
+      vec SupportedToken,
+      opt principal,
+      opt principal,
+    ) -> (Result);
   get_config : () -> (VaultFactoryConfig) query;
   get_vault : (text) -> (opt record { principal; principal }) query;
   get_vaults : () -> (vec record { principal; principal }) query;

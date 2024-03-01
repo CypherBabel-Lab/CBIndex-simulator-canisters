@@ -24,7 +24,7 @@ use ic_exports::icrc_types::icrc2::allowance::AllowanceArgs;
 use ic_exports::icrc_types::icrc2::transfer_from::TransferFromArgs;
 use ic_exports::icrc_types::icrc1::account::Account as Account;
 use token::state::config::Metadata;
-use vault::state::config::VaultConfig;
+use vault::state::config::{VaultConfig,SupportedToken};
 use vault::icrc:: icrc1:: Icrc1;
 use vault::icrc:: icrc2::{ Icrc2, Icrc2Token};
 use vault::icrc:: utils::principal_to_subaccount;
@@ -102,7 +102,7 @@ impl VaultFactoryCanister {
     pub async fn create_vault(
         &self,
         info: Metadata,
-        supported_tokens: Vec<Principal>,
+        supported_tokens: Vec<SupportedToken>,
         exchange_rate_canister: Option<Principal>,
         controller: Option<Principal>,
     ) -> Result<PrincipalValue, VaultFactoryError> {

@@ -1,7 +1,7 @@
 use candid::CandidType;
 use token::error::TxError;
 use thiserror::Error;
-
+use ic_exports::icrc_types::icrc2:: transfer_from::TransferFromError;
 #[derive(Debug, Error, CandidType)]
 pub enum VaultError {
     #[error("the property {0} has invalid value: {0}")]
@@ -19,6 +19,15 @@ pub enum VaultError {
     #[error("token not supported")]
     TokenNotSupported,
 
+    #[error("nav is zero")]
+    ZeroNav,
+
     #[error(transparent)]
     SharesTokenError(#[from] TxError),
+
+    #[error("ICRC2 transfer error")]
+    ICRC2TransferError(TransferFromError),
+
+    #[error("Exchange Rate error")]
+    ExchangeRateError,
 }

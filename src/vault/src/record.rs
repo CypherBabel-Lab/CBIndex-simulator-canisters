@@ -1,4 +1,4 @@
-use candid::CandidType;
+use candid::{CandidType, Nat, Principal};
 use serde::Deserialize;
 
 #[derive(Deserialize, CandidType, Clone, Debug)]
@@ -12,12 +12,15 @@ pub enum Record {
 
 #[derive(Deserialize, CandidType, Clone, Debug)]
 pub struct Deposit {
-
+    pub canister_id: Principal,
+    pub amount: Nat,
 }
 
 #[derive(Deserialize, CandidType, Clone, Debug)]
 pub struct Withdraw {
-
+    pub shares: Nat,
+    pub canister_ids: Vec<Principal>,
+    pub weights: Vec<u16>,
 }
 
 #[derive(Deserialize, CandidType, Clone, Debug)]

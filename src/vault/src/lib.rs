@@ -7,6 +7,7 @@ pub mod record;
 use candid::Nat;
 pub use ic_exports::icrc_types::icrc1::account::Account as Account;
 pub use ic_exports::icrc_types::icrc1::account::Subaccount as Subaccount;
+pub use ic_exports::icrc1_ledger::Ledger;
 
 pub use self::api::*;
 
@@ -20,10 +21,10 @@ pub fn idl() -> String {
     use ic_exports::Principal;
     use self::state::{
         ledger::VaultLedger,
-        config::VaultConfig,
+        config::VaultConfig
     };
     use self::error::VaultError;
-    use self::record::Withdraw;
+    use self::record::{Withdraw,Deposit};
     
     let canister_idl = generate_idl!();
 
