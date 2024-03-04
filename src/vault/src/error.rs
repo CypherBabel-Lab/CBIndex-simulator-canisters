@@ -30,4 +30,10 @@ pub enum VaultError {
 
     #[error("Exchange Rate error")]
     ExchangeRateError,
+    
+    #[error("Invalid withdraw args")]
+    InvalidWithdrawArgs,
+
+    #[error("Insufficient token balance")]
+    InsufficientTokenBalance
 }

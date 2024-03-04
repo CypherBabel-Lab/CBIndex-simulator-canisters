@@ -18,7 +18,7 @@ pub struct Deposit {
 
 #[derive(Deserialize, CandidType, Clone, Debug)]
 pub struct Withdraw {
-    pub shares: Nat,
+    pub shares_percent: u16,    //  0 - 10000 (0 - 100%)
     pub canister_ids: Vec<Principal>,
     pub weights: Vec<u16>,
 }

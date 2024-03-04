@@ -26,6 +26,8 @@ use crate::exchange_rate:: {
     Service,
 };
 
+const PERCENTAGE_DIVISOR: u16 = 10000;
+
 #[derive(Clone, Canister)]
 #[canister_no_upgrade_methods]
 pub struct VaultCanister {
@@ -106,7 +108,7 @@ impl VaultCanister {
     }
 
     #[update]
-    pub async fn deposit(&self, _deposit_args: Deposit) -> Result<u64, VaultError> {
+    pub async fn deposit(&self, _deposit_args: Deposit) -> Result<Nat, VaultError> {
         let caller_principal = canister_sdk::ic_kit::ic::caller();
         let canister_id = canister_sdk::ic_kit::ic::id();
         // check if token is supported
@@ -154,14 +156,14 @@ impl VaultCanister {
             GetExchangeRateResult::Ok(exchange_rate) => {
                 let rate = exchange_rate.rate;
                 let decimals = exchange_rate.metadata.decimals;
-                let exchange_rate = rate / 10u64.pow(decimals);
+                let exchange_rate_human = rate / 10u64.pow(decimals);
                 let amount = _deposit_args.amount.clone() / 10u64.pow(token_decimals.into());
-                let shares_num = exchange_rate * amount / nav;
+                let shares_num = exchange_rate_human * amount / nav;
                 ic_cdk::println!("minting {} shares", shares_num);
                 let tx_receipt = call::<(Principal, Option<Subaccount>, Tokens128), (TxReceipt,)>(
                     conf.shares_token.unwrap(),
                     "mint",
-                    (caller_principal, None::<Subaccount>, Tokens128::from_nat(&(shares_num * 10u64.pow(8))).unwrap())
+                    (caller_principal, None::<Subaccount>, Tokens128::from_nat(&(shares_num.clone() * 10u64.pow(8))).unwrap())
                 ).await.unwrap().0;
                 if tx_receipt.is_err() {
                     return Err(VaultError::SharesTokenError(tx_receipt.unwrap_err()));
@@ -180,17 +182,94 @@ impl VaultCanister {
                 }
                 // add deposit record
                 TxRecordsData::deposit(_deposit_args);
+                Ok(shares_num.clone())
             },
             GetExchangeRateResult::Err(_) => {
                 ic_cdk::print("get exchange rate error");
                 return Err(VaultError::ExchangeRateError);
             }
-        };
-        Ok(0u64)
+        }
     }
 
     #[update]
-    pub fn withdraw(&self, _withdraw_args: Withdraw) -> Result<u64, VaultError> {
-        Ok(0u64)
+    pub async fn withdraw(&self, withdraw_args: Withdraw) -> Result<Vec<Nat>, VaultError> {
+        let caller_principal = canister_sdk::ic_kit::ic::caller();
+        let canister_id = canister_sdk::ic_kit::ic::id();
+        if withdraw_args.canister_ids.len() != withdraw_args.weights.len() {
+            return Err(VaultError::InvalidWithdrawArgs);
+        }
+        // get shares token balance
+        let shares_token = VaultConfig::get_stable().shares_token.unwrap();
+        let shares_token_ins = Icrc2Token::new(shares_token);   
+        let shares_balance = shares_token_ins.icrc1_balance_of(Account::from(caller_principal)).await.unwrap().0;
+        let withdraw_shares = withdraw_args.shares_percent / PERCENTAGE_DIVISOR * shares_balance;
+        // get nav
+        let nav = VaultLedger::get_stable().get_nav().await;
+        // calculate withdraw amount
+        let withdraw_amount = nav * withdraw_shares.clone();
+        let mut withdraw_token_amount_vec = vec![];
+        for (i,token_canister_id) in withdraw_args.canister_ids.iter().enumerate() {
+            let token_ins = Icrc2Token::new(token_canister_id.clone());
+            let token_decimals = token_ins.icrc1_decimals().await.unwrap().0;
+            let token_balance = token_ins.icrc1_balance_of(Account::from(canister_id.clone())).await.unwrap().0;
+            // get exchange rate
+            let token_exchange_symbol = VaultConfig::get_stable().supported_tokens.iter().find(|item| item.canister_id == token_canister_id.clone()).unwrap().symbol.clone();
+            let exchange_rate_result = Service::new(VaultConfig::get_stable().exchange_rate_canister.clone()).get_exchange_rate(GetExchangeRateRequest{
+                timestamp: None,
+                quote_asset: Asset{
+                    class: AssetClass::Cryptocurrency,
+                    symbol: token_exchange_symbol,
+                },
+                base_asset: Asset{
+                    class: AssetClass::FiatCurrency,
+                    symbol: "USD".to_string(),
+                },
+            }).await.unwrap().0;
+            match exchange_rate_result {
+                GetExchangeRateResult::Ok(exchange_rate) => {
+                    let rate = exchange_rate.rate;
+                    let decimals = exchange_rate.metadata.decimals;
+                    let exchange_rate_human = rate / 10u64.pow(decimals);
+                    let withdraw_token_amount = withdraw_amount.clone() * Nat::from(withdraw_args.weights[i].clone() / PERCENTAGE_DIVISOR) / exchange_rate_human * 10u64.pow(token_decimals.into());
+                    if token_balance < withdraw_token_amount {
+                        return Err(VaultError::InsufficientTokenBalance);
+                    }
+                    withdraw_token_amount_vec.push(withdraw_token_amount);
+                },
+                GetExchangeRateResult::Err(_) => {
+                    ic_cdk::print("get exchange rate error");
+                    return Err(VaultError::ExchangeRateError);
+                }
+            };
+        };
+        // burn shares
+        let tx_receipt = call::<(Principal, Option<Subaccount>, Tokens128), (TxReceipt,)>(
+            shares_token,
+            "burn",
+            (caller_principal, None::<Subaccount>, Tokens128::from_nat(&(withdraw_shares.clone() * 10u64.pow(8))).unwrap())
+        ).await.unwrap().0;
+        if tx_receipt.is_err() {
+            return Err(VaultError::SharesTokenError(tx_receipt.unwrap_err()));
+        }
+        // transfer token
+        for (i,token_canister_id) in withdraw_args.canister_ids.iter().enumerate() {
+            let token_ins = Icrc2Token::new(token_canister_id.clone());
+            let token_fee = token_ins.icrc1_fee().await.unwrap().0;
+            let transfer_result = token_ins.icrc2_transfer_from(TransferFromArgs {
+                spender_subaccount: None,
+                from: Account::from(canister_id.clone()),
+                to: Account::from(caller_principal.clone()),
+                amount: withdraw_token_amount_vec[i].clone(),
+                fee: Some(token_fee),
+                memo: None,
+                created_at_time: None,
+            }).await.unwrap().0;
+            if transfer_result.is_err() {
+                return Err(VaultError::ICRC2TransferError(transfer_result.unwrap_err()));
+            }
+        }
+        // add withdraw record
+        TxRecordsData::withdraw(withdraw_args);
+        Ok(withdraw_token_amount_vec)
     }
 }

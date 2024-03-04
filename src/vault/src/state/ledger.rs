@@ -71,6 +71,9 @@ impl VaultLedger {
                     let icrc = icrc2::Icrc2Token::new(token.canister_id.clone());
                     let decimals_token = icrc.icrc1_decimals().await.unwrap().0;
                     let balance = icrc.icrc1_balance_of(Account::from(ic_cdk::id())).await.unwrap().0;
+                    if balance == Nat::from(0) {
+                        continue;
+                    }
                     let exchange_rate_result = Service::new(VaultConfig::get_stable().exchange_rate_canister.clone()).get_exchange_rate(GetExchangeRateRequest{
                         timestamp: None,
                         quote_asset: Asset{
