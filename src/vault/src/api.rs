@@ -213,6 +213,7 @@ impl VaultCanister {
     pub async fn withdraw(&self, withdraw_args: Withdraw) -> Result<Vec<Nat>, VaultError> {
         let caller_principal = canister_sdk::ic_kit::ic::caller();
         let canister_id = canister_sdk::ic_kit::ic::id();
+        ic_cdk::println!("withdrawing {}% shares", withdraw_args.clone().shares_percent as f64 / (PERCENTAGE_DIVISOR as f64) * 100.0);
         if withdraw_args.canister_ids.len() != withdraw_args.weights.len() {
             return Err(VaultError::InvalidWithdrawArgs);
         }
@@ -220,10 +221,12 @@ impl VaultCanister {
         let shares_token = VaultConfig::get_stable().shares_token.unwrap();
         let shares_token_ins = Icrc2Token::new(shares_token);   
         let shares_balance = shares_token_ins.icrc1_balance_of(Account::from(caller_principal)).await.unwrap().0;
+        ic_cdk::println!("shares balance: {:?}", shares_balance);
         let shares_balance_u128: u128 = shares_balance.clone().0.try_into().unwrap();
-        let withdraw_shares = (withdraw_args.shares_percent.clone() as f64) / (PERCENTAGE_DIVISOR as f64) * (shares_balance_u128 as f64);
+        let withdraw_shares = (withdraw_args.shares_percent.clone() as f64) / (PERCENTAGE_DIVISOR as f64) * (shares_balance_u128 as f64) / 10u64.pow(8) as f64;
         // get nav
         let nav = VaultLedger::get_stable().get_nav().await;
+        ic_cdk::println!("nav: {:?}", nav);
         // calculate withdraw amount
         let withdraw_amount = nav * withdraw_shares.clone();
         let mut withdraw_token_amount_vec = vec![];
@@ -241,7 +244,7 @@ impl VaultCanister {
                 },
                 base_asset: Asset{
                     class: AssetClass::Cryptocurrency,
-                    symbol: token_exchange_symbol,
+                    symbol: token_exchange_symbol.clone(),
                 },
             }).await.unwrap().0;
             match exchange_rate_result {
@@ -250,6 +253,7 @@ impl VaultCanister {
                     let decimals = exchange_rate.metadata.decimals;
                     let exchange_rate_human = (rate as f64) / (10u64.pow(decimals) as f64);
                     let withdraw_token_amount = Nat::from((withdraw_amount.clone() * (withdraw_args.weights[i].clone() as f64) / (PERCENTAGE_DIVISOR as f64) / exchange_rate_human * (10u64.pow(token_decimals.into()) as f64)) as u128);
+                    ic_cdk::println!("withdraw {} of {}", withdraw_token_amount, token_exchange_symbol.clone());
                     if token_balance < withdraw_token_amount {
                         return Err(VaultError::InsufficientTokenBalance);
                     }

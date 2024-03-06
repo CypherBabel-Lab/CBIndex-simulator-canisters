@@ -72,3 +72,15 @@ dfx canister call $VAULT_CANISTER_ID get_nav
 
 
 echo "--------------withdraw ckbtc and cketh from vault canister-----------------"
+dfx canister call $VAULT_CANISTER_ID withdraw "(record { canister_ids = vec { principal \"$CKBTC_CANISTER_ID\"; principal \"$CKETH_CANISTER_ID\"}; weights = vec { 6000 : nat16; 4000 : nat16 }; shares_percent = 5000 : nat16;})"
+
+
+echo "--------------investor ckbtc balance-----------------"
+dfx canister call $CKBTC_CANISTER_ID icrc1_balance_of "(record { owner = principal \"$INVESTOR\"; })"
+echo "--------------investor cketh balance-----------------"
+dfx canister call $CKETH_CANISTER_ID icrc1_balance_of "(record { owner = principal \"$INVESTOR\"; })"
+echo "--------------investor shares token balance-------------"
+dfx canister call --query $VAULT_SHARES_TOKEN_CANISTER_ID icrc1_balance_of "(record { owner = principal \"$INVESTOR\"; })"
+echo "--------------check vault aum and nav---------------------"
+dfx canister call $VAULT_CANISTER_ID get_aum
+dfx canister call $VAULT_CANISTER_ID get_nav
