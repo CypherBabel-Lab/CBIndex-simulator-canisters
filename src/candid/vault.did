@@ -1,4 +1,12 @@
 type Deposit = record { canister_id : principal; amount : nat };
+type PaginatedResult = record { result : vec TxRecord; next : opt nat64 };
+type Record = variant {
+  Withdraw : Withdraw;
+  Lend : record {};
+  Deposit : Deposit;
+  Swap : record {};
+  Borrow : record {};
+};
 type Result = variant { Ok : float64; Err : VaultError };
 type Result_1 = variant { Ok; Err : VaultError };
 type Result_2 = variant { Ok : vec nat; Err : VaultError };
@@ -27,6 +35,7 @@ type TxError = variant {
   InsufficientFunds : record { balance : nat };
   AmountTooSmall;
 };
+type TxRecord = record { id : nat64; timestamp : nat64; "record" : Record };
 type VaultConfig = record {
   deploy_time : nat64;
   owner : principal;
@@ -38,6 +47,7 @@ type VaultConfig = record {
   shares_token : opt principal;
 };
 type VaultError = variant {
+  InvalidTokenAllowance;
   TokenAlreadySet;
   NotController;
   TokenNotSupported;
@@ -62,6 +72,7 @@ service : (VaultConfig) -> {
   get_config : () -> (VaultConfig) query;
   get_ledger : () -> (VaultLedger) query;
   get_nav : () -> (float64);
+  get_tx_records : (nat64, opt nat64) -> (PaginatedResult) query;
   pkg_version : () -> (text) query;
   set_shares_token : (principal) -> (Result_1);
   withdraw : (Withdraw) -> (Result_2);

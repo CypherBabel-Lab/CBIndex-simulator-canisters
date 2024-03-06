@@ -35,5 +35,8 @@ pub enum VaultError {
     InvalidWithdrawArgs,
 
     #[error("Insufficient token balance")]
-    InsufficientTokenBalance
+    InsufficientTokenBalance,
+    
+    #[error("Invalid token allowance")]
+    InvalidTokenAllowance
 }

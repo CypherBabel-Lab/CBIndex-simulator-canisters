@@ -68,7 +68,7 @@ impl TxRecordsData {
     }
 }
 
-type TxId = u64;
+pub type TxId = u64;
 
 #[derive(Debug, Clone, CandidType, Deserialize)]
 pub struct PaginatedResult {

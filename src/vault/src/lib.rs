@@ -21,7 +21,8 @@ pub fn idl() -> String {
     use ic_exports::Principal;
     use self::state::{
         ledger::VaultLedger,
-        config::VaultConfig
+        config::VaultConfig,
+        tx_record::{PaginatedResult,TxId},
     };
     use self::error::VaultError;
     use self::record::{Withdraw,Deposit};

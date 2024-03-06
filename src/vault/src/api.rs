@@ -1,15 +1,15 @@
 use std::{cell::RefCell, rc::Rc};
 
 use candid::{Principal, Nat};
-use ic_exports::{ic_cdk::{self, call}, icrc_types::icrc1::account::Subaccount};
+use ic_exports::{ic_cdk::{self, call}, icrc_types::{icrc1::account::Subaccount, icrc2::allowance::AllowanceArgs}};
 use canister_sdk::{
    ic_canister::{
         init, post_upgrade, pre_upgrade, query, update, Canister, MethodType, PreUpdate 
     }, ic_helpers::tokens::Tokens128, ic_metrics::{Metrics, MetricsStorage}, ic_storage
 };
-use token::state::ledger::TxReceipt;
+use token::{state::ledger::TxReceipt, tx_record::TxId};
 
-use crate::{icrc::{icrc1::Icrc1, icrc2::{Icrc2,Icrc2Token}}, state::{config::{SupportedToken, VaultConfig}, tx_record::TxRecordsData}};
+use crate::{icrc::{icrc1::Icrc1, icrc2::{Icrc2,Icrc2Token}}, state::{config::{SupportedToken, VaultConfig}, tx_record::{PaginatedResult, TxRecordsData}}};
 use crate::state::ledger::VaultLedger;
 use crate::error::VaultError;
 use crate::record::{
@@ -80,6 +80,11 @@ impl VaultCanister {
         VaultLedger::get_stable()
     }
 
+    #[query]
+    pub fn get_tx_records(&self, count:usize, id:Option<TxId>) -> PaginatedResult {
+        TxRecordsData::get_records(count, id)
+    }
+
     #[update]
     pub async fn get_aum(&self) -> f64 {
         VaultLedger::get_stable().get_aum().await
@@ -123,6 +128,14 @@ impl VaultCanister {
         let token_ins = Icrc2Token::new(deposit_args.canister_id);
         let token_fee = token_ins.icrc1_fee().await.unwrap().0;
         let token_decimals = token_ins.icrc1_decimals().await.unwrap().0;
+        let token_allowance = token_ins.icrc2_allowance(AllowanceArgs {
+            account: Account::from(caller_principal),
+            spender: Account::from(canister_id),
+        }).await.unwrap().0;
+        ic_cdk::println!("token allowance: {:?}", token_allowance);
+        if token_allowance.allowance < deposit_args.amount.clone() + token_fee.clone() {
+            return Err(VaultError::InvalidTokenAllowance);
+        }
         let transfer_result = token_ins.icrc2_transfer_from(TransferFromArgs {
             spender_subaccount: None,
             from: Account::from(caller_principal),
