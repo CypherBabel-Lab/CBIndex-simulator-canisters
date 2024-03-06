@@ -149,7 +149,7 @@ impl VaultFactoryCanister {
             .await?;  //create a valut canister
         self.set_canister_wasm(TOKEN_WASM.to_vec())?;
         let mut info = info.clone();
-        info.owner = caller_principal;
+        info.owner = vault_principal;
         info.decimals = 8;
         info.fee = Tokens128::from(10000);
         info.fee_to = caller_principal;

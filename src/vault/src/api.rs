@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
 use candid::{Principal, Nat};
-use ic_exports::{ic_cdk::{self, call},icrc_types::icrc1::account::Subaccount};
+use ic_exports::{ic_cdk::{self, call}, icrc_types::icrc1::account::Subaccount};
 use canister_sdk::{
    ic_canister::{
         init, post_upgrade, pre_upgrade, query, update, Canister, MethodType, PreUpdate 
@@ -80,13 +80,13 @@ impl VaultCanister {
         VaultLedger::get_stable()
     }
 
-    #[query]
-    pub async fn get_aum(&self) -> Nat {
+    #[update]
+    pub async fn get_aum(&self) -> f64 {
         VaultLedger::get_stable().get_aum().await
     }
 
-    #[query]
-    pub async fn get_nav(&self) -> Nat {
+    #[update]
+    pub async fn get_nav(&self) -> f64 {
         VaultLedger::get_stable().get_nav().await
     }
     
@@ -108,26 +108,26 @@ impl VaultCanister {
     }
 
     #[update]
-    pub async fn deposit(&self, _deposit_args: Deposit) -> Result<Nat, VaultError> {
+    pub async fn deposit(&self, deposit_args: Deposit) -> Result<f64, VaultError> {
         let caller_principal = canister_sdk::ic_kit::ic::caller();
         let canister_id = canister_sdk::ic_kit::ic::id();
         // check if token is supported
         let conf = VaultConfig::get_stable();
-        let token_symbol = conf.supported_tokens.iter().find(|item| item.canister_id == _deposit_args.canister_id).unwrap().symbol.clone();
+        let token_symbol = conf.supported_tokens.iter().find(|item| item.canister_id == deposit_args.canister_id).unwrap().symbol.clone();
         if token_symbol == "" {
             return Err(VaultError::TokenNotSupported);
         }
-        ic_cdk::println!("depositing {} of {}", _deposit_args.amount, _deposit_args.canister_id.to_text());
+        ic_cdk::println!("depositing {} of {}", deposit_args.amount, token_symbol);
         let ledger_data = VaultLedger::get_stable();
         // transfer token (must approve first)
-        let token_ins = Icrc2Token::new(_deposit_args.canister_id);
+        let token_ins = Icrc2Token::new(deposit_args.canister_id);
         let token_fee = token_ins.icrc1_fee().await.unwrap().0;
         let token_decimals = token_ins.icrc1_decimals().await.unwrap().0;
         let transfer_result = token_ins.icrc2_transfer_from(TransferFromArgs {
             spender_subaccount: None,
             from: Account::from(caller_principal),
             to: Account::from(canister_id),
-            amount: _deposit_args.clone().amount,
+            amount: deposit_args.clone().amount,
             fee: Some(token_fee),
             memo: None,
             created_at_time: None,
@@ -135,9 +135,10 @@ impl VaultCanister {
         if transfer_result.is_err() {
             return Err(VaultError::ICRC2TransferError(transfer_result.unwrap_err()));
         }
+        ic_cdk::println!("transfer token ok!");
         // cacl nav
-        let nav = ledger_data.get_aum().await;
-        if nav == Nat::from(0) {
+        let nav = ledger_data.get_nav().await;
+        if nav == 0.0 {
             return Err(VaultError::ZeroNav)
         }
         // mint shares
@@ -145,27 +146,30 @@ impl VaultCanister {
             timestamp: None,
             quote_asset: Asset{
                 class: AssetClass::Cryptocurrency,
-                symbol: token_symbol.clone(),
+                symbol: "USDT".to_string(),
             },
             base_asset: Asset{
-                class: AssetClass::FiatCurrency,
-                symbol: "USD".to_string(),
+                class: AssetClass::Cryptocurrency,
+                symbol: token_symbol.clone(),
             },
         }).await.unwrap().0;
         match exchange_rate_result {
             GetExchangeRateResult::Ok(exchange_rate) => {
+                ic_cdk::println!("exchange rate: {:?}", exchange_rate);
                 let rate = exchange_rate.rate;
                 let decimals = exchange_rate.metadata.decimals;
-                let exchange_rate_human = rate / 10u64.pow(decimals);
-                let amount = _deposit_args.amount.clone() / 10u64.pow(token_decimals.into());
+                let exchange_rate_human = (rate as f64) / (10u64.pow(decimals) as f64);
+                let amount_u128 :u128 = deposit_args.amount.clone().0.try_into().unwrap();
+                let amount = (amount_u128 as f64) / (10u64.pow(token_decimals.into()) as f64);
                 let shares_num = exchange_rate_human * amount / nav;
                 ic_cdk::println!("minting {} shares", shares_num);
                 let tx_receipt = call::<(Principal, Option<Subaccount>, Tokens128), (TxReceipt,)>(
                     conf.shares_token.unwrap(),
                     "mint",
-                    (caller_principal, None::<Subaccount>, Tokens128::from_nat(&(shares_num.clone() * 10u64.pow(8))).unwrap())
+                    (caller_principal, None::<Subaccount>, Tokens128::from_f64(shares_num * (10u64.pow(8) as f64)).unwrap())
                 ).await.unwrap().0;
                 if tx_receipt.is_err() {
+                    ic_cdk::println!("mint shares error: {:?}", tx_receipt.as_ref().unwrap_err());
                     return Err(VaultError::SharesTokenError(tx_receipt.unwrap_err()));
                 }
                 // update ledger
@@ -173,19 +177,20 @@ impl VaultCanister {
                 if ledger_data.tokens.is_none() {
                     ledger_data.tokens = Some(vec![]);
                 }
-                let token = SupportedToken {
-                    canister_id: _deposit_args.canister_id.clone(),
+                let token_new = SupportedToken {
+                    canister_id: deposit_args.canister_id.clone(),
                     symbol: token_symbol,
                 };
-                if !ledger_data.tokens.as_ref().unwrap().contains(&token) {
-                    ledger_data.tokens.as_mut().unwrap().push(token);
+                if !ledger_data.tokens.as_ref().unwrap().contains(&token_new) {
+                    ledger_data.tokens.as_mut().unwrap().push(token_new);
                 }
+                VaultLedger::set_stable(ledger_data);
                 // add deposit record
-                TxRecordsData::deposit(_deposit_args);
+                TxRecordsData::deposit(deposit_args);
                 Ok(shares_num.clone())
             },
-            GetExchangeRateResult::Err(_) => {
-                ic_cdk::print("get exchange rate error");
+            GetExchangeRateResult::Err(err) => {
+                ic_cdk::println!("get exchange rate error: {:?}", err);
                 return Err(VaultError::ExchangeRateError);
             }
         }
@@ -202,7 +207,8 @@ impl VaultCanister {
         let shares_token = VaultConfig::get_stable().shares_token.unwrap();
         let shares_token_ins = Icrc2Token::new(shares_token);   
         let shares_balance = shares_token_ins.icrc1_balance_of(Account::from(caller_principal)).await.unwrap().0;
-        let withdraw_shares = withdraw_args.shares_percent / PERCENTAGE_DIVISOR * shares_balance;
+        let shares_balance_u128: u128 = shares_balance.clone().0.try_into().unwrap();
+        let withdraw_shares = (withdraw_args.shares_percent.clone() as f64) / (PERCENTAGE_DIVISOR as f64) * (shares_balance_u128 as f64);
         // get nav
         let nav = VaultLedger::get_stable().get_nav().await;
         // calculate withdraw amount
@@ -218,19 +224,19 @@ impl VaultCanister {
                 timestamp: None,
                 quote_asset: Asset{
                     class: AssetClass::Cryptocurrency,
-                    symbol: token_exchange_symbol,
+                    symbol: "USDT".to_string(),
                 },
                 base_asset: Asset{
-                    class: AssetClass::FiatCurrency,
-                    symbol: "USD".to_string(),
+                    class: AssetClass::Cryptocurrency,
+                    symbol: token_exchange_symbol,
                 },
             }).await.unwrap().0;
             match exchange_rate_result {
                 GetExchangeRateResult::Ok(exchange_rate) => {
                     let rate = exchange_rate.rate;
                     let decimals = exchange_rate.metadata.decimals;
-                    let exchange_rate_human = rate / 10u64.pow(decimals);
-                    let withdraw_token_amount = withdraw_amount.clone() * Nat::from(withdraw_args.weights[i].clone() / PERCENTAGE_DIVISOR) / exchange_rate_human * 10u64.pow(token_decimals.into());
+                    let exchange_rate_human = (rate as f64) / (10u64.pow(decimals) as f64);
+                    let withdraw_token_amount = Nat::from((withdraw_amount.clone() * (withdraw_args.weights[i].clone() as f64) / (PERCENTAGE_DIVISOR as f64) / exchange_rate_human * (10u64.pow(token_decimals.into()) as f64)) as u128);
                     if token_balance < withdraw_token_amount {
                         return Err(VaultError::InsufficientTokenBalance);
                     }
@@ -246,7 +252,7 @@ impl VaultCanister {
         let tx_receipt = call::<(Principal, Option<Subaccount>, Tokens128), (TxReceipt,)>(
             shares_token,
             "burn",
-            (caller_principal, None::<Subaccount>, Tokens128::from_nat(&(withdraw_shares.clone() * 10u64.pow(8))).unwrap())
+            (caller_principal, None::<Subaccount>,Tokens128::from_f64(withdraw_shares * (10u64.pow(8) as f64)).unwrap())
         ).await.unwrap().0;
         if tx_receipt.is_err() {
             return Err(VaultError::SharesTokenError(tx_receipt.unwrap_err()));

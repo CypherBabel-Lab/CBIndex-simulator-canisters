@@ -1,7 +1,7 @@
 use candid::Principal;
 use ic_exports::candid::{CandidType, Deserialize};
 use ic_exports::{
-  ic_cdk,
+  ic_cdk::api::call::call_with_payment,
   ic_cdk::api::call::CallResult as Result,
 };
 
@@ -14,16 +14,16 @@ impl Service {
   
   pub async fn get_exchange_rate(&self, arg0: GetExchangeRateRequest) -> Result<
     (GetExchangeRateResult,)
-  > { ic_cdk::call(self.0, "get_exchange_rate", (arg0,)).await }
+  > { call_with_payment(self.0, "get_exchange_rate", (arg0,), 1000000000).await }
 }
 
-#[derive(CandidType, Deserialize)]
+#[derive(CandidType, Deserialize, Debug)]
 pub enum AssetClass {
      Cryptocurrency, 
      FiatCurrency,
 }
 
-#[derive(CandidType, Deserialize)]
+#[derive(CandidType, Deserialize, Debug)]
 pub struct Asset { 
     pub class: AssetClass, 
     pub symbol: String,
@@ -36,7 +36,7 @@ pub struct GetExchangeRateRequest {
   pub base_asset: Asset,
 }
 
-#[derive(CandidType, Deserialize)]
+#[derive(CandidType, Deserialize, Debug)]
 pub struct ExchangeRateMetadata {
   pub decimals: u32,
   pub forex_timestamp: Option<u64>,
@@ -47,7 +47,7 @@ pub struct ExchangeRateMetadata {
   pub quote_asset_num_queried_sources: u64,
 }
 
-#[derive(CandidType, Deserialize)]
+#[derive(CandidType, Deserialize, Debug)]
 pub struct ExchangeRate {
   pub metadata: ExchangeRateMetadata,
   pub rate: u64,
@@ -56,7 +56,7 @@ pub struct ExchangeRate {
   pub base_asset: Asset,
 }
 
-#[derive(CandidType, Deserialize)]
+#[derive(CandidType, Deserialize, Debug)]
 pub enum ExchangeRateError {
   AnonymousPrincipalNotAllowed,
   CryptoQuoteAssetNotFound,

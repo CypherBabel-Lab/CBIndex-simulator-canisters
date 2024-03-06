@@ -1,6 +1,6 @@
 use std::{cell::RefCell, borrow::Cow};
 
-use candid::{CandidType,Deserialize, Encode, Decode, Nat};
+use candid::{CandidType, Decode, Deserialize, Encode, Nat};
 use ic_exports::ic_cdk;
 use ic_stable_structures::{MemoryId,StableCell,Storable};
 use crate::exchange_rate:: {
@@ -19,6 +19,7 @@ use crate:: Account;
 use super::config::SupportedToken;
 
 const LEDGER_MEMORY_ID: MemoryId = MemoryId::new(1);
+const DEFAULT_NAV:u8 =  100;
 
 thread_local! {
     static VAULT_LEDGER_CELL: RefCell<StableCell<VaultLedger>> = {
@@ -62,10 +63,10 @@ impl VaultLedger {
             .expect("unable to set vault ledger to stable memory")
     }
 
-    pub async fn get_aum(&self) -> Nat {
+    pub async fn get_aum(&self) -> f64 {
         match self.tokens.clone() {
             Some(tokens) => {
-                let mut aum = Nat::from(0);
+                let mut aum = 0.0;
                 let mut if_error = false;
                 for token in tokens {
                     let icrc = icrc2::Icrc2Token::new(token.canister_id.clone());
@@ -78,20 +79,21 @@ impl VaultLedger {
                         timestamp: None,
                         quote_asset: Asset{
                             class: AssetClass::Cryptocurrency,
-                            symbol: token.symbol.clone(),
+                            symbol: "USDT".to_string(),
                         },
                         base_asset: Asset{
-                            class: AssetClass::FiatCurrency,
-                            symbol: "USD".to_string(),
+                            class: AssetClass::Cryptocurrency,
+                            symbol: token.symbol.clone(),
                         },
                     }).await.unwrap().0;
                     match exchange_rate_result {
                         GetExchangeRateResult::Ok(exchange_rate) => {
                             let rate = exchange_rate.rate;
                             let decimals = exchange_rate.metadata.decimals;
-                            let exchange_rate = rate / 10u64.pow(decimals);
-                            let balance = balance / 10u64.pow(decimals_token.into());
-                            aum = aum + balance * exchange_rate;
+                            let exchange_rate = (rate as f64) / (10u64.pow(decimals) as f64);
+                            let balance_u64 :u128 = balance.clone().0.try_into().unwrap();
+                            let balance_f64 = balance_u64 as f64/ (10u64.pow(decimals_token.into()) as f64);
+                            aum = aum + balance_f64 * exchange_rate;
                         },
                         GetExchangeRateResult::Err(_) => {
                             ic_cdk::print("get exchange rate error");
@@ -101,24 +103,26 @@ impl VaultLedger {
                     };
                 }
                 if if_error {
-                    Nat::from(0)
+                    0_f64
                 } else {
                     aum
                 }
             },
-            None => Nat::from(100),
+            None => 0_f64,
         }
     }
 
-    pub async fn get_nav(&self) -> Nat {
+    pub async fn get_nav(&self) -> f64 {
         let aum = self.get_aum().await;
         let shares_token = VaultConfig::get_stable().shares_token;
         let icrc = icrc2::Icrc2Token::new(shares_token.unwrap());
+        let token_decimails = icrc.icrc1_decimals().await.unwrap().0;
         let total_supply = icrc.icrc1_total_supply().await.unwrap().0;
-        if total_supply == Nat::from(0){
-            Nat::from(0)
+        if total_supply.clone() == Nat::from(0){
+            DEFAULT_NAV as f64
         } else {
-            aum / total_supply
+            let total_supply_u128 :u128 = total_supply.clone().0.try_into().unwrap();
+            aum / ( total_supply_u128 as f64) *  (10u64.pow(token_decimails.into()) as f64)
         }
     }
 
