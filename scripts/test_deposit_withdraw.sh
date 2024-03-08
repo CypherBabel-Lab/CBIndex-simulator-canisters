@@ -26,7 +26,7 @@ echo "--------------approve vault canister ckbtc---------------------"
 dfx canister call $CKBTC_CANISTER_ID icrc1_balance_of "(record { owner = principal \"$INVESTOR\"; })"
 dfx canister call $CKBTC_CANISTER_ID icrc2_approve "(record {spender = record { owner = principal \"$VAULT_CANISTER_ID\";};amount = $APPROVE_CKBTC_AMOUNT; })"
 dfx canister call $CKBTC_CANISTER_ID icrc2_allowance "(record {account = record { owner = principal \"$INVESTOR\";}; spender = record { owner = principal \"$VAULT_CANISTER_ID\";} })"
-dfx canister call $VAULT_CANISTER_ID deposit "(record { canister_id = principal \"$CKBTC_CANISTER_ID\"; amount = $DEPOSIT_CKBTC_AMOUNT : nat;})"
+dfx canister call $VAULT_CANISTER_ID deposit "(principal \"$CKBTC_CANISTER_ID\", $DEPOSIT_CKBTC_AMOUNT : nat)"
 
 echo "--------------investor ckbtc balance-----------------"
 dfx canister call $CKBTC_CANISTER_ID icrc1_balance_of "(record { owner = principal \"$INVESTOR\"; })"
@@ -43,7 +43,7 @@ echo "--------------approve vault canister cketh---------------------"
 dfx canister call $CKETH_CANISTER_ID icrc1_balance_of "(record { owner = principal \"$INVESTOR\"; })"
 dfx canister call $CKETH_CANISTER_ID icrc2_approve "(record {spender = record { owner = principal \"$VAULT_CANISTER_ID\";};amount = $APPROVE_CKETH_AMOUNT; })"
 dfx canister call $CKETH_CANISTER_ID icrc2_allowance "(record {account = record { owner = principal \"$INVESTOR\";}; spender = record { owner = principal \"$VAULT_CANISTER_ID\";} })"
-dfx canister call $VAULT_CANISTER_ID deposit "(record { canister_id = principal \"$CKETH_CANISTER_ID\"; amount = $DEPOSIT_CKETH_AMOUNT : nat;})"
+dfx canister call $VAULT_CANISTER_ID deposit "(principal \"$CKETH_CANISTER_ID\", $DEPOSIT_CKETH_AMOUNT : nat)"
 
 echo "--------------investor cketh balance-----------------"
 dfx canister call $CKETH_CANISTER_ID icrc1_balance_of "(record { owner = principal \"$INVESTOR\"; })"
@@ -60,7 +60,7 @@ echo "--------------approve vault canister icp---------------------"
 dfx canister call $ICP_CANISTER_ID icrc1_balance_of "(record { owner = principal \"$INVESTOR\"; })"
 dfx canister call $ICP_CANISTER_ID icrc2_approve "(record {spender = record { owner = principal \"$VAULT_CANISTER_ID\";};amount = $APPROVE_ICP_AMOUNT; })"
 dfx canister call $ICP_CANISTER_ID icrc2_allowance "(record {account = record { owner = principal \"$INVESTOR\";}; spender = record { owner = principal \"$VAULT_CANISTER_ID\";} })"
-dfx canister call $VAULT_CANISTER_ID deposit "(record { canister_id = principal \"$ICP_CANISTER_ID\"; amount = $DEPOSIT_ICP_AMOUNT : nat;})"
+dfx canister call $VAULT_CANISTER_ID deposit "(principal \"$ICP_CANISTER_ID\", $DEPOSIT_ICP_AMOUNT : nat)"
 
 echo "--------------investor icp balance-----------------"
 dfx canister call $ICP_CANISTER_ID icrc1_balance_of "(record { owner = principal \"$INVESTOR\"; })"
@@ -72,7 +72,7 @@ dfx canister call $VAULT_CANISTER_ID get_nav
 
 
 echo "--------------withdraw ckbtc and cketh from vault canister-----------------"
-dfx canister call $VAULT_CANISTER_ID withdraw "(record { canister_ids = vec { principal \"$CKBTC_CANISTER_ID\"; principal \"$CKETH_CANISTER_ID\"}; weights = vec { 6000 : nat16; 4000 : nat16 }; shares_percent = 5000 : nat16;})"
+dfx canister call $VAULT_CANISTER_ID withdraw "(5000 : nat16)"
 
 
 echo "--------------investor ckbtc balance-----------------"

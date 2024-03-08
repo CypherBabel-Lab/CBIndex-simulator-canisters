@@ -1,0 +1,34 @@
+type DepositArgs = record { fee : nat; token : text; amount : nat };
+
+type SwapArgs = record {
+  amountIn : text;
+  zeroForOne : bool;
+  amountOutMinimum : text;
+};
+
+type WithdrawArgs = record { fee : nat; token : text; amount : nat };
+
+type Error = variant {
+   CommonError;
+   InsufficientFunds;
+   InternalError: text;
+   UnsupportedToken: text;
+ };
+
+type Result = variant { ok : nat; err : Error };
+
+type Result_7 = variant {
+  ok : record { balance0 : nat; balance1 : nat };
+  err : Error;
+};
+
+type SwapPool = service {
+    deposit : (DepositArgs) -> (Result);
+    depositFrom : (DepositArgs) -> (Result);
+    getUserUnusedBalance : (principal) -> (Result_7) query;
+    quote : (SwapArgs) -> (Result) query;
+    swap : (SwapArgs) -> (Result);
+    withdraw : (WithdrawArgs) -> (Result);
+}
+
+service : SwapPool

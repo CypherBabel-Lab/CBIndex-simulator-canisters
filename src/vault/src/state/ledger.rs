@@ -1,6 +1,5 @@
 use std::{cell::RefCell, borrow::Cow};
-
-use candid::{CandidType, Decode, Deserialize, Encode, Nat};
+use candid::{CandidType, Decode, Deserialize, Encode, Nat, Principal};
 use ic_exports::ic_cdk;
 use ic_stable_structures::{MemoryId,StableCell,Storable};
 use crate::exchange_rate:: {
@@ -27,6 +26,36 @@ thread_local! {
                 .expect("stable memory vault ledger initialization failed"))
     }
 }
+
+#[derive(Deserialize, CandidType, Clone, Debug)]
+pub struct VaultLedgerTokenAum {
+    pub token_id: Principal,
+    pub balance: f64,
+    pub price: f64,
+    pub aum: f64,
+    pub decimals: u8,
+}
+
+#[derive(Deserialize, CandidType, Clone, Debug)]
+pub struct VaultLedgerTokensAum {
+    pub datas: Option<Vec<VaultLedgerTokenAum>>,
+}
+
+impl VaultLedgerTokensAum {
+    pub fn aum(&self) -> f64 {
+        match self.datas.clone() {
+            Some(datas) => {
+                let mut aum = 0.0;
+                for data in datas {
+                    aum = aum + data.balance * data.price;
+                }
+                aum
+            },
+            None => 0_f64,
+        }
+    }
+}
+
 
 #[derive(Deserialize, CandidType, Clone, Debug)]
 pub struct VaultLedger {
@@ -63,10 +92,10 @@ impl VaultLedger {
             .expect("unable to set vault ledger to stable memory")
     }
 
-    pub async fn get_aum(&self) -> f64 {
+    pub async fn get_aum(&self) -> VaultLedgerTokensAum {
         match self.tokens.clone() {
             Some(tokens) => {
-                let mut aum = 0.0;
+                let mut result: Vec<VaultLedgerTokenAum> = vec![];
                 let mut if_error = false;
                 for token in tokens {
                     let icrc = icrc2::Icrc2Token::new(token.canister_id.clone());
@@ -93,7 +122,14 @@ impl VaultLedger {
                             let exchange_rate = (rate as f64) / (10u64.pow(decimals) as f64);
                             let balance_u64 :u128 = balance.clone().0.try_into().unwrap();
                             let balance_f64 = balance_u64 as f64/ (10u64.pow(decimals_token.into()) as f64);
-                            aum = aum + balance_f64 * exchange_rate;
+                            // aum = aum + balance_f64 * exchange_rate;
+                            result.push(VaultLedgerTokenAum{
+                                token_id: token.canister_id.clone(),
+                                balance: balance_f64,
+                                price: exchange_rate,
+                                aum: balance_f64 * exchange_rate,
+                                decimals: decimals_token,
+                            });
                         },
                         GetExchangeRateResult::Err(_) => {
                             ic_cdk::print("get exchange rate error");
@@ -103,12 +139,12 @@ impl VaultLedger {
                     };
                 }
                 if if_error {
-                    0_f64
+                    VaultLedgerTokensAum{datas: None}
                 } else {
-                    aum
+                    VaultLedgerTokensAum{datas: Some(result)}
                 }
             },
-            None => 0_f64,
+            None => VaultLedgerTokensAum{datas: None},
         }
     }
 
@@ -122,7 +158,7 @@ impl VaultLedger {
             DEFAULT_NAV as f64
         } else {
             let total_supply_u128 :u128 = total_supply.clone().0.try_into().unwrap();
-            aum / ( total_supply_u128 as f64) *  (10u64.pow(token_decimails.into()) as f64)
+            aum.aum() / ( total_supply_u128 as f64) *  (10u64.pow(token_decimails.into()) as f64)
         }
     }
 

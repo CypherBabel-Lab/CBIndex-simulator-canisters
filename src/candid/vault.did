@@ -1,4 +1,27 @@
-type Deposit = record { canister_id : principal; amount : nat };
+type ApproveError = variant {
+  GenericError : record { message : text; error_code : nat };
+  TemporarilyUnavailable;
+  Duplicate : record { duplicate_of : nat };
+  BadFee : record { expected_fee : nat };
+  AllowanceChanged : record { current_allowance : nat };
+  CreatedInFuture : record { ledger_time : nat64 };
+  TooOld;
+  Expired : record { ledger_time : nat64 };
+  InsufficientFunds : record { balance : nat };
+};
+type Deposit = record {
+  shares_num : float64;
+  canister_id : principal;
+  eq_usd : float64;
+  amount : float64;
+};
+type DepositArgs = record { fee : nat; token : principal; amount : nat };
+type Error = variant {
+  CommonError;
+  InternalError : text;
+  UnsupportedToken : text;
+  InsufficientFunds;
+};
 type PaginatedResult = record { result : vec TxRecord; next : opt nat64 };
 type Record = variant {
   Withdraw : Withdraw;
@@ -7,10 +30,16 @@ type Record = variant {
   Swap : record {};
   Borrow : record {};
 };
-type Result = variant { Ok : float64; Err : VaultError };
-type Result_1 = variant { Ok; Err : VaultError };
-type Result_2 = variant { Ok : vec nat; Err : VaultError };
+type Result = variant { Ok; Err : VaultError };
+type Result_1 = variant { Ok : float64; Err : VaultError };
+type Result_2 = variant { Ok : nat; Err : VaultError };
+type Result_3 = variant { Ok : Withdraw; Err : VaultError };
 type SupportedToken = record { canister_id : principal; symbol : text };
+type SwapArgs = record {
+  amountIn : text;
+  zeroForOne : bool;
+  amountOutMinimum : text;
+};
 type TransferFromError = variant {
   GenericError : record { message : text; error_code : nat };
   TemporarilyUnavailable;
@@ -48,10 +77,12 @@ type VaultConfig = record {
 };
 type VaultError = variant {
   InvalidTokenAllowance;
+  SwapPoolError : Error;
   TokenAlreadySet;
   NotController;
   TokenNotSupported;
   ExchangeRateError;
+  ICRC2ApproveError : ApproveError;
   InvalidWithdrawArgs;
   ICRC2TransferError : TransferFromError;
   SharesTokenError : TxError;
@@ -61,19 +92,33 @@ type VaultError = variant {
   ZeroNav;
 };
 type VaultLedger = record { tokens : opt vec SupportedToken };
+type VaultLedgerTokenAum = record {
+  aum : float64;
+  decimals : nat8;
+  balance : float64;
+  token_id : principal;
+  price : float64;
+};
+type VaultLedgerTokensAum = record { datas : opt vec VaultLedgerTokenAum };
 type Withdraw = record {
   canister_ids : vec principal;
-  shares_percent : nat16;
-  weights : vec nat16;
+  amounts : vec float64;
+  eq_usds : vec float64;
+  shares_nums : float64;
 };
+type WithdrawArgs = record { fee : nat; token : text; amount : nat };
 service : (VaultConfig) -> {
-  deposit : (Deposit) -> (Result);
-  get_aum : () -> (float64);
+  approve : (principal, principal, nat) -> (Result);
+  deposit : (principal, nat) -> (Result_1);
+  deposit_from : (principal, DepositArgs) -> (Result);
+  get_aum : () -> (VaultLedgerTokensAum);
   get_config : () -> (VaultConfig) query;
   get_ledger : () -> (VaultLedger) query;
   get_nav : () -> (float64);
   get_tx_records : (nat64, opt nat64) -> (PaginatedResult) query;
   pkg_version : () -> (text) query;
-  set_shares_token : (principal) -> (Result_1);
-  withdraw : (Withdraw) -> (Result_2);
+  set_shares_token : (principal) -> (Result);
+  swap : (principal, SwapArgs) -> (Result_2);
+  withdraw : (nat16) -> (Result_3);
+  withdraw_from : (principal, WithdrawArgs) -> (Result);
 }

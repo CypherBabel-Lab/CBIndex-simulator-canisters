@@ -3,7 +3,9 @@ pub mod state;
 pub mod exchange_rate;
 pub mod error;
 pub mod icrc;
+pub mod icp_swap;
 pub mod record;
+use crate::icp_swap::swap_pool;
 use candid::Nat;
 pub use ic_exports::icrc_types::icrc1::account::Account as Account;
 pub use ic_exports::icrc_types::icrc1::account::Subaccount as Subaccount;
@@ -20,12 +22,12 @@ pub fn idl() -> String {
     use canister_sdk::ic_canister::{generate_idl,Idl};
     use ic_exports::Principal;
     use self::state::{
-        ledger::VaultLedger,
+        ledger::{VaultLedger, VaultLedgerTokensAum},
         config::VaultConfig,
         tx_record::{PaginatedResult,TxId},
     };
     use self::error::VaultError;
-    use self::record::{Withdraw,Deposit};
+    use self::record::Withdraw;
     
     let canister_idl = generate_idl!();
 
