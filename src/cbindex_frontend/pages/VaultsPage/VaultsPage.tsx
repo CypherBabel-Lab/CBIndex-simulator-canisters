@@ -17,12 +17,11 @@ const VaultsPage = () => {
             config.canisterId = getList[i][1].toString()
             config.owner = config.owner.toString()
             for (let i = 0; i < config.supported_tokens.length; i++) {
-                config.supported_tokens[i] = config.supported_tokens[i].toString()
+                config.supported_tokens[i] = config.supported_tokens[i].canister_id.toString()
             }
             initList.push(config)
         }
         initList.sort((a, b) => Number(b.deploy_time) - Number(a.deploy_time))
-        console.log(initList);
         setDataSource(initList)
         setLoading(!loading)
     }

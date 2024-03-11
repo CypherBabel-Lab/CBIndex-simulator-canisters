@@ -7,11 +7,15 @@ import "@connect2ic/core/style.css"
 import VaultsPage from './pages/VaultsPage/VaultsPage'
 import * as vault_factory from '../declarations/vault_factory'
 import * as icp_ledger_canister from '../declarations/icp_ledger_canister'
+import * as ckbtc_ledger_canister from '../declarations/ckbtc'
+import * as cketh_ledger_canister from '../declarations/cketh'
+import * as vault from '../declarations/vault'
 import { ConfigProvider, theme } from "antd";
 import Layout from "./components/Layout/Layout/Layout"
 import { Routes, Route, } from "react-router-dom"
 import DetailsPage from "./pages/DetailsPage/DetailsPage"
 import CreateActiveFund from "./pages/CreateVaultPage/CreateVaultPage"
+import SwapPage from "./pages/SwapPage/SwapPage"
 import { BrowserRouter, Navigate } from 'react-router-dom';
 function App() {
   return (
@@ -19,7 +23,8 @@ function App() {
       <Routes>
         <Route path="/vaults" element={<VaultsPage />}></Route>
         <Route path="/createactivefund" element={< CreateActiveFund />}></Route>
-        <Route path="/details" element={< DetailsPage />}></Route>
+        <Route path="/details" element={<DetailsPage />}></Route>
+        <Route path="/swap" element={<SwapPage />}></Route>
         <Route path="*" element={<Navigate to="/vaults" replace />} />
       </Routes>
       <ConnectDialog />
@@ -37,7 +42,9 @@ const provider = new PlugWallet({
 const client = createClient({
   canisters: {
     vault_factory,
-    icp_ledger_canister
+    icp_ledger_canister,
+    ckbtc_ledger_canister,
+    cketh_ledger_canister
   },
   providers: [provider],
   globalProviderConfig: {

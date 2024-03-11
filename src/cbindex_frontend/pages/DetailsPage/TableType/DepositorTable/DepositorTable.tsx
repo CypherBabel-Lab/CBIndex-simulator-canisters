@@ -5,28 +5,20 @@ const DepositorTable = ({ DepositorList }: any) => {
     const columns = [
         {
             title: 'Wallet Address',
-            dataIndex: 'depositor_address',
+            dataIndex: '0',
             key: 'depositor_address',
-        },
-        {
-            title: 'Percentage',
-            dataIndex: 'percentage',
-            key: 'percentage',
-            render: (text: number) => {
-                return <>{(text * 100).toFixed(2)}%</>
+            render: (text) => {
+                console.log(text);
+                return <>{text.owner.toString()}</>
             }
         },
         {
-            title: 'Share Size',
-            dataIndex: 'shares_num',
-            key: 'shares_num',
-        },
-        {
-            title: 'create At',
-            dataIndex: 'createdAt',
-            key: 'createdAt',
-            render: (text: any) => {
-                return <></>
+            title: 'Shares',
+            dataIndex: '1',
+            key: 'Shares',
+            render: (text: number) => {
+                console.log(Number(text) / 100000000);
+                return <>{(Number(text) / 100000000)}</>
             }
         },
     ];

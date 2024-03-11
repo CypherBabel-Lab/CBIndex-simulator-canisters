@@ -3,8 +3,8 @@ import reactRefresh from "@vitejs/plugin-react-refresh"
 import path from "path"
 import dfxJson from "./dfx.json"
 import fs from "fs"
-
-const isDev = process.env["DFX_NETWORK"] !== "ic"
+// process.env["DFX_NETWORK"] !== "ic"
+const isDev = true
 
 type Network = "ic" | "local"
 

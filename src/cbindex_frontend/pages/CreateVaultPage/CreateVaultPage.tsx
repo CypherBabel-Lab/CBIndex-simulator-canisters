@@ -1,18 +1,24 @@
-import React, { useState } from "react";
-import { Input, Button, Modal, Spin } from "antd";
-import classes from "./style.module.less";
+import React, { useState, useRef, useEffect } from "react";
+
+import { Input, Button, Modal, Spin, ColorPicker } from "antd";
 import { useWallet, useBalance } from "@connect2ic/react"
-import { Metadata } from '../../../declarations/vault_factory/vault_factory.did'
 import { Principal } from '@dfinity/principal';
-const rule = /^[a-zA-Z0-9]{3,50}$/;
+// import { createActor } from '@connect2ic/core/dist/declarations/src/providers/plug-wallet'
+
+import { Metadata } from '../../../declarations/vault_factory/vault_factory.did'
 import { useCanister } from "@connect2ic/react";
 import MySelect from '../../components/Select/Select'
 import locale from '../../../../.dfx/local/canister_ids.json'
 import { ApproveArgs } from "src/declarations/icp_ledger_canister/icp_ledger_canister.did";
 import token from '../../utils/tokenInfo/token.json'
+import Chart from "../../components/Chart/Chart";
+import classes from "./style.module.less";
+
+import { createActor } from '../../../declarations/vault/index'
+const rule = /^[a-zA-Z0-9]{3,50}$/;
 const CreateVaultPage = () => {
   const [balance] = useBalance()
-  console.log(balance);
+  const chartChildRef = useRef(null)
   const [vault_factory] = useCanister("vault_factory")
   const [icrc_ledger] = useCanister("icp_ledger_canister")
   const [show, setShow] = useState(true)
@@ -31,6 +37,9 @@ const CreateVaultPage = () => {
   const [nameAlreadyExists, setNameAlreadyExists] = useState(false)
   const [tokensPrincipal, setTokensPrincipal] = useState([])
   const [tokens, setTokens] = useState([])
+
+  let vault = useRef(null)
+
   const approve = async () => {
     let arg: ApproveArgs = {
       fee: [],
@@ -49,6 +58,7 @@ const CreateVaultPage = () => {
       await icrc_ledger.icrc2_approve(arg)
       await vault_factory.transfer_icp()
     } catch (e) {
+      console.log(e);
       setCreateStatus({ msg: "Wallet declined the action!", status: "error" })
       throw Error("CBIndex:Approve Error!")
     }
@@ -66,13 +76,20 @@ const CreateVaultPage = () => {
       symbol: createObj.symbol,
       is_test_token: [false],
     };
-    vault_factory.create_vault(initArgs, [...tokensPrincipal], [], []).then((resut: any) => {
+    vault_factory.create_vault(initArgs, [...tokensPrincipal], [Principal.fromText("uf6dk-hyaaa-aaaaq-qaaaq-cai")], []).then(async (resut: any) => {
       if (resut.Ok) {
-        setCreateStatus({ ...createStatus, status: "success" })
-        vault_factory.refund_icp().then(d => {
-          console.log(d);
+        vault.current = createActor(resut.Ok[0].toString(), {
+          agent: wallet.ic.agent
         })
+        try {
+          await vault.current.set_shares_token(Principal.fromText(resut.Ok[1].toString()))
+        } catch (e) {
+          console.log(e);
+        }
+        setCreateStatus({ ...createStatus, status: "success" })
+        vault_factory.refund_icp()
       } else {
+        console.log(resut.Err);
         switch (Object.keys(resut.Err)[0]) {
           case "FactoryError":
             switch (Object.keys(resut.Err.FactoryError)[0]) {
@@ -97,7 +114,11 @@ const CreateVaultPage = () => {
     setTokens(tokensArray)
     let t = []
     for (let i = 0; i < tokensArray.length; i++) {
-      t.push(Principal.fromText(tokensArray[i]))
+      let obj = {
+        canister_id: Principal.fromText(tokensArray[i]),
+        symbol: token[tokensArray[i]].symbol
+      }
+      t.push(obj)
     }
     setTokensPrincipal(t)
   }
@@ -126,100 +147,100 @@ const CreateVaultPage = () => {
   }
   return (
     <>
-      {wallet ? (
-        <div className={classes.createCreateVaultBox}>
-          <div className={classes.createCreateInfoBox}>
-            <div className={classes.createItem}>
-              <div className={classes.title}>Name</div>
-              <Input
-                onChange={(e) => {
-                  setCreateObj({ ...createObj, name: e.target.value });
-                }}
-                status={!nameStatus || nameAlreadyExists ? "error" : ""}
-                onBlur={(e) => {
-                  if (!e.target.value) return;
-                  console.log(rule.test(e.target.value));
-                  setNameStatus(rule.test(e.target.value));
-                  if (rule.test(e.target.value)) {
-                    vault_factory.get_vault(e.target.value).then((d: any) => {
-                      console.log(d.length);
-                      setNameAlreadyExists(d.length)
-                    })
-                  } else {
+      {
+        wallet ? (
+          <div className={classes.createCreateVaultBox}>
+            <div className={classes.createCreateInfoBox}>
+              <div className={classes.createItem}>
+                <div className={classes.title}>Name</div>
+                <Input
+                  onChange={(e) => {
+                    setCreateObj({ ...createObj, name: e.target.value });
+                  }}
+                  status={!nameStatus || nameAlreadyExists ? "error" : ""}
+                  onBlur={(e) => {
+                    if (!e.target.value) return;
                     setNameStatus(rule.test(e.target.value));
-                    setNameAlreadyExists(false)
-                  }
-                }}
-                value={createObj.name}
-              />
-              {!nameStatus && (
-                <div
-                  style={{
-                    color: "#dc4446",
+                    if (rule.test(e.target.value)) {
+                      vault_factory.get_vault(e.target.value).then((d: any) => {
+                        setNameAlreadyExists(d.length)
+                      })
+                    } else {
+                      setNameStatus(rule.test(e.target.value));
+                      setNameAlreadyExists(false)
+                    }
                   }}
-                >
-                  Name does not meet the requirements (3-50 characters).
-                </div>
-              )}
-              {
-                nameAlreadyExists ?
-                  <div style={{
-                    color: "#dc4446",
-                  }}>
-                    Name already exists!
+                  value={createObj.name}
+                />
+                {!nameStatus && (
+                  <div
+                    style={{
+                      color: "#dc4446",
+                    }}
+                  >
+                    Name does not meet the requirements (3-50 characters).
                   </div>
-                  : ""
-              }
-            </div>
-            <div className={classes.createItem}>
-              <div className={classes.title}>Symbol </div>
-              <Input
-                onChange={(e) => {
-                  setCreateObj({ ...createObj, symbol: e.target.value });
-                }}
-                value={createObj.symbol}
-                status={!symbolStatus ? "error" : ""}
-                onBlur={(e) => {
-                  if (!e.target.value) return;
-                  setSymbolStatus(rule.test(e.target.value));
-                }}
-              />
-              {!symbolStatus && (
-                <div
-                  style={{
-                    color: "#dc4446",
+                )}
+                {
+                  nameAlreadyExists ?
+                    <div style={{
+                      color: "#dc4446",
+                    }}>
+                      Name already exists!
+                    </div>
+                    : ""
+                }
+              </div>
+              <div className={classes.createItem}>
+                <div className={classes.title}>Symbol </div>
+                <Input
+                  onChange={(e) => {
+                    setCreateObj({ ...createObj, symbol: e.target.value });
+                  }}
+                  value={createObj.symbol}
+                  status={!symbolStatus ? "error" : ""}
+                  onBlur={(e) => {
+                    if (!e.target.value) return;
+                    setSymbolStatus(rule.test(e.target.value));
+                  }}
+                />
+                {!symbolStatus && (
+                  <div
+                    style={{
+                      color: "#dc4446",
+                    }}
+                  >
+                    Symbol does not meet the requirements (3-50 characters).
+                  </div>
+                )}
+              </div>
+              <div className={classes.createItem}>
+                <div className={classes.title}>Supported Tokens</div>
+                {show && <MySelect getSelectTokenArrayFuc={getSelectTokenArrayFuc} />}
+              </div>
+              <div className={classes.createBtn}>
+                <Button
+                  disabled={
+                    createObj.name === "" ||
+                    createObj.symbol === "" ||
+                    !nameStatus ||
+                    !symbolStatus || !tokensPrincipal.length || nameAlreadyExists
+                  }
+                  onClick={() => {
+                    setCreateModal(true);
                   }}
                 >
-                  Symbol does not meet the requirements (3-50 characters).
-                </div>
-              )}
-            </div>
-            <div className={classes.createItem}>
-              <div className={classes.title}>Supported Tokens</div>
-              {show && <MySelect getSelectTokenArrayFuc={getSelectTokenArrayFuc} />}
-            </div>
-            <div className={classes.createBtn}>
-              <Button
-                disabled={
-                  createObj.name === "" ||
-                  createObj.symbol === "" ||
-                  !nameStatus ||
-                  !symbolStatus || !tokensPrincipal.length || nameAlreadyExists
-                }
-                onClick={() => {
-                  setCreateModal(true);
-                }}
-              >
-                Create
-              </Button>
+                  Create
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      ) : (
-        <div className={classes.noLoginBox}>
-          Please connect wallet
-        </div>
-      )}
+        ) : (
+          <div className={classes.noLoginBox}>
+            Please connect wallet
+          </div>
+        )
+      }
       {/*Modal*/}
       <div>
         <Modal
