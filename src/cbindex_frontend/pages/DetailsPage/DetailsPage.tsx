@@ -181,7 +181,7 @@ const DetailsPage = () => {
 
   const getVaultList = async () => {
     vault.current = createActor(params.getAll("vaultAddress")[0], {
-      agent: wallet.ic.agent,
+      agent: (wallet as any).ic.agent,
     })
     let config = await vault.current.get_config()
     config.owner = config.owner.toString()
