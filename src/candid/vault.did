@@ -15,7 +15,7 @@ type Deposit = record {
   eq_usd : float64;
   amount : float64;
 };
-type DepositArgs = record { fee : nat; token : principal; amount : nat };
+type DepositArgs = record { fee : nat; token : text; amount : nat };
 type Error = variant {
   CommonError;
   InternalError : text;
@@ -106,7 +106,6 @@ type Withdraw = record {
   eq_usds : vec float64;
   shares_nums : float64;
 };
-type WithdrawArgs = record { fee : nat; token : text; amount : nat };
 service : (VaultConfig) -> {
   approve : (principal, principal, nat) -> (Result);
   deposit : (principal, nat) -> (Result_1);
@@ -120,5 +119,5 @@ service : (VaultConfig) -> {
   set_shares_token : (principal) -> (Result);
   swap : (principal, SwapArgs) -> (Result_2);
   withdraw : (nat16) -> (Result_3);
-  withdraw_from : (principal, WithdrawArgs) -> (Result);
+  withdraw_from : (principal, DepositArgs) -> (Result);
 }

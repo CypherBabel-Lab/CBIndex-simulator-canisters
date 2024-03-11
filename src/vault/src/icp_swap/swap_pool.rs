@@ -1,18 +1,20 @@
 // This is an experimental feature to generate Rust binding from Candid.
 // You may want to manually adjust some of the types.
 #![allow(dead_code, unused_imports)]
+use std::clone;
+
 use candid::{self, CandidType, Deserialize, Principal, Encode, Decode};
 use ic_cdk::api::call::CallResult as Result;
 use ic_exports::ic_cdk;
 
-#[derive(CandidType, Deserialize, Clone)]
+#[derive(CandidType, Deserialize,Clone)]
 pub struct DepositArgs {
   pub fee: candid::Nat,
-  pub token: Principal,
+  pub token: String,
   pub amount: candid::Nat,
 }
 
-#[derive(CandidType, Deserialize,Debug)]
+#[derive(CandidType, Deserialize, Debug)]
 pub enum Error {
   CommonError,
   InternalError(String),

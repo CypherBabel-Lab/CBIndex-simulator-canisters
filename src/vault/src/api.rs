@@ -289,12 +289,11 @@ impl VaultCanister {
                 withdraw_res.eq_usds.push(withdraw_amount);
                 withdraw_token_amount_vec.push(Nat::from((withdraw_amount / token_aum.price * 10u64.pow(token_aum.decimals.into()) as f64 ) as u128));
                 break;
-            }else {
-                withdraw_amount -= token_aum.aum;
-                withdraw_res.amounts.push(token_aum.balance);
-                withdraw_res.eq_usds.push(token_aum.aum);
-                withdraw_token_amount_vec.push(Nat::from((token_aum.balance * 10u64.pow(token_aum.decimals.into()) as f64) as u128));
             }
+            withdraw_amount -= token_aum.aum;
+            withdraw_res.amounts.push(token_aum.balance);
+            withdraw_res.eq_usds.push(token_aum.aum);
+            withdraw_token_amount_vec.push(Nat::from((token_aum.balance * 10u64.pow(token_aum.decimals.into()) as f64) as u128));
         }
         // burn shares
         let tx_receipt = call::<(Principal, Option<Subaccount>, Tokens128), (TxReceipt,)>(
@@ -358,7 +357,8 @@ impl VaultCanister {
         if VaultConfig::get_stable().owner != caller {
             return Err(VaultError::NotController);
         }
-        let token_ins = Icrc2Token::new(deposit_args.token.clone());
+        let token_principal = Principal::from_text(deposit_args.token.clone()).unwrap();
+        let token_ins = Icrc2Token::new(token_principal);
         let token_fee = token_ins.icrc1_fee().await.unwrap().0;
         let mut deposit_args_new = deposit_args.clone();
         deposit_args_new.amount = deposit_args.amount + token_fee.clone();
@@ -382,6 +382,7 @@ impl VaultCanister {
         let swap_result = swap_pool::Service(swap_pool_id).swap(swap_args).await.unwrap().0;
         match swap_result {
             swap_pool::Result_::Ok(amount) => {
+                ic_cdk::println!("swap amount: {:?}", amount);
                 Ok(amount)
             },
             swap_pool::Result_::Err(err) => {
