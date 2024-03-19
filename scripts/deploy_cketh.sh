@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 
-dfx identity new minter --storage-mode=plaintext
-dfx identity use minter
+dfx identity new minter_cketh --storage-mode=plaintext
+dfx identity use minter_cketh
 MINTER=$(dfx identity get-principal)
 dfx identity use default
 DEFAULT=$(dfx identity get-principal)
 TOKEN_NAME="cketh"
 TOKEN_SYMBOL="CKETH"
 TOKEN_CANISTER_ID="ss2fx-dyaaa-aaaar-qacoq-cai"
-PRE_MINTED_TOKENS=10_000_000_000
-TRANSFER_FEE=10_000
+PRE_MINTED_TOKENS=100_000_000_000_000
+#TRANSFER_FEE=10_000
+TRANSFER_FEE=0
 FEATURE_FLAGS=true
 
 dfx identity new archive_controller --storage-mode=plaintext

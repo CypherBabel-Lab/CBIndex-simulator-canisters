@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 
-dfx identity new minter --storage-mode=plaintext
-dfx identity use minter
+dfx identity new minter_ckbtc --storage-mode=plaintext
+dfx identity use minter_ckbtc
 MINTER=$(dfx identity get-principal)
 dfx identity use default
 DEFAULT=$(dfx identity get-principal)
 TOKEN_NAME="ckbtc"
 TOKEN_SYMBOL="CKBTC"
 TOKEN_CANISTER_ID="mxzaz-hqaaa-aaaar-qaada-cai"
-PRE_MINTED_TOKENS=10_000_000_000
-TRANSFER_FEE=10_000
+PRE_MINTED_TOKENS=100_000_000_000_000
+#TRANSFER_FEE=10_000
+TRANSFER_FEE=0
 FEATURE_FLAGS=true
 
 dfx identity new archive_controller --storage-mode=plaintext

@@ -40,10 +40,10 @@
     },
     "xrc": {
       "type": "custom",
-      "candid": "src/xrc/xrc.did",
-      "wasm": "src/xrc/xrc.wasm.gz",
+      "candid": "test/xrc/xrc.did",
+      "wasm": "test/xrc/xrc.wasm.gz",
       "remote": {
-        "candid": "src/xrc/xrc.did",
+        "candid": "test/xrc/xrc.did",
         "id": {
           "ic": "uf6dk-hyaaa-aaaaq-qaaaq-cai"
         }
@@ -51,13 +51,59 @@
     },
     "cmc": {
       "type": "custom",
-      "candid": "src/cmc/cmc.did",
-      "wasm": "src/cmc/cmc-custom.wasm",
+      "candid": "test/cmc/cmc.did",
+      "wasm": "test/cmc/cmc-custom.wasm",
       "remote": {
         "id": {
           "ic": "rkp4c-7iaaa-aaaaa-aaaca-cai"
         }
       }
+    },
+    "SwapFeeReceiver": {
+      "type": "custom",
+      "candid": "test/icp_swap/SwapFeeReceiver/SwapFeeReceiver.did",
+      "wasm": "test/icp_swap/SwapFeeReceiver/SwapFeeReceiver.wasm"
+    },
+    "SwapFactory": {
+      "type": "custom",
+      "candid": "test/icp_swap/SwapFactory/SwapFactory.did",
+      "wasm": "test/icp_swap/SwapFactory/SwapFactory.wasm"
+    },
+    "PasscodeManager": {
+      "type": "custom",
+      "candid": "test/icp_swap/PasscodeManager/PasscodeManager.did",
+      "wasm": "test/icp_swap/PasscodeManager/PasscodeManager.wasm"
+    },
+    "PositionIndex": {
+      "type": "custom",
+      "candid": "test/icp_swap/PositionIndex/PositionIndex.did",
+      "wasm": "test/icp_swap/PositionIndex/PositionIndex.wasm",
+      "dependencies": ["SwapFactory"]
+    },
+    "TrustedCanisterManager": {
+      "type": "custom",
+      "candid": "test/icp_swap/TrustedCanisterManager/TrustedCanisterManager.did",
+      "wasm": "test/icp_swap/TrustedCanisterManager/TrustedCanisterManager.wasm"
+    },
+    "base_index": {
+      "wasm": "test/icp_swap/base_index/base_index.wasm",
+      "type": "custom",
+      "candid": "test/icp_swap/base_index/base_index.did"
+    },
+    "node_index": {
+      "wasm": "test/icp_swap/node_index/node_index.wasm",
+      "type": "custom",
+      "candid": "test/icp_swap/node_index/node_index.did"
+    },
+    "ICRC2": {
+      "wasm": "test/icp_swap/icrc2/icrc2.wasm",
+      "type": "custom",
+      "candid": "test/icp_swap/icrc2/icrc2.did"
+    },
+    "price": {
+      "wasm": "test/icp_swap/price/price.wasm",
+      "type": "custom",
+      "candid": "test/icp_swap/price/price.did"
     },
     "cbindex_frontend": {
       "frontend": {
