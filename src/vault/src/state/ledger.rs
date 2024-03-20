@@ -165,10 +165,4 @@ impl VaultLedger {
     pub fn get_tokens(&self) -> Vec<SupportedToken> {
         self.tokens.clone().unwrap_or(vec![])
     }
-
-    pub fn add_token(&mut self, token: SupportedToken) {
-        let mut tokens = self.tokens.clone().unwrap_or(vec![]);
-        tokens.push(token);
-        self.tokens = Some(tokens);
-    }
 }

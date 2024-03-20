@@ -1,10 +1,10 @@
-use candid::CandidType;
+use candid::{CandidType, Deserialize};
 use token::error::TxError;
 use thiserror::Error;
 use ic_exports::icrc_types::icrc2::{approve::ApproveError,  transfer_from::TransferFromError};
 
 use crate::icp_swap::swap_pool;
-#[derive(Debug, Error, CandidType)]
+#[derive(Debug, Error, CandidType, Deserialize)]
 pub enum VaultError {
     #[error("the property {0} has invalid value: {0}")]
     InvalidConfiguration(&'static str, &'static str),

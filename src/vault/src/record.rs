@@ -28,7 +28,12 @@ pub struct Withdraw {
 
 #[derive(Deserialize, CandidType, Clone, Debug)]
 pub struct Swap {
-
+    pub pool_id: Principal,
+    pub token0: Principal,
+    pub token0_amount: f64,
+    pub token1: Principal,
+    pub token1_amount: f64,
+    pub eq_usd: f64
 }
 
 #[derive(Deserialize, CandidType, Clone, Debug)]

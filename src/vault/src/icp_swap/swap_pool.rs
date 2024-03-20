@@ -8,7 +8,7 @@ use ic_exports::ic_cdk;
 #[derive(CandidType, Deserialize, Clone)]
 pub struct DepositArgs {
   pub fee: candid::Nat,
-  pub token: Principal,
+  pub token: String,
   pub amount: candid::Nat,
 }
 
@@ -36,7 +36,7 @@ pub enum Result7 {
   Err(Error),
 }
 
-#[derive(CandidType, Deserialize)]
+#[derive(CandidType, Deserialize, Clone)]
 pub struct SwapArgs {
   pub amountIn: String,
   pub zeroForOne: bool,

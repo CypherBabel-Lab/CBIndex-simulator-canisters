@@ -27,7 +27,7 @@ pub fn idl() -> String {
         tx_record::{PaginatedResult,TxId},
     };
     use self::error::VaultError;
-    use self::record::Withdraw;
+    use self::record::{Withdraw,Swap};
     
     let canister_idl = generate_idl!();
 

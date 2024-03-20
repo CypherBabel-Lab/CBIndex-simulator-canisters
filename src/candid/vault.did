@@ -15,7 +15,7 @@ type Deposit = record {
   eq_usd : float64;
   amount : float64;
 };
-type DepositArgs = record { fee : nat; token : principal; amount : nat };
+type DepositArgs = record { fee : nat; token : text; amount : nat };
 type Error = variant {
   CommonError;
   InternalError : text;
@@ -27,14 +27,22 @@ type Record = variant {
   Withdraw : Withdraw;
   Lend : record {};
   Deposit : Deposit;
-  Swap : record {};
+  Swap : Swap;
   Borrow : record {};
 };
 type Result = variant { Ok; Err : VaultError };
 type Result_1 = variant { Ok : float64; Err : VaultError };
-type Result_2 = variant { Ok : nat; Err : VaultError };
+type Result_2 = variant { Ok : Swap; Err : VaultError };
 type Result_3 = variant { Ok : Withdraw; Err : VaultError };
 type SupportedToken = record { canister_id : principal; symbol : text };
+type Swap = record {
+  token0_amount : float64;
+  token0 : principal;
+  token1 : principal;
+  token1_amount : float64;
+  eq_usd : float64;
+  pool_id : principal;
+};
 type SwapArgs = record {
   amountIn : text;
   zeroForOne : bool;
@@ -106,7 +114,6 @@ type Withdraw = record {
   eq_usds : vec float64;
   shares_nums : float64;
 };
-type WithdrawArgs = record { fee : nat; token : text; amount : nat };
 service : (VaultConfig) -> {
   approve : (principal, principal, nat) -> (Result);
   deposit : (principal, nat) -> (Result_1);
@@ -118,7 +125,7 @@ service : (VaultConfig) -> {
   get_tx_records : (nat64, opt nat64) -> (PaginatedResult) query;
   pkg_version : () -> (text) query;
   set_shares_token : (principal) -> (Result);
-  swap : (principal, SwapArgs) -> (Result_2);
+  swap : (principal, principal, principal, SwapArgs) -> (Result_2);
   withdraw : (nat16) -> (Result_3);
-  withdraw_from : (principal, WithdrawArgs) -> (Result);
+  withdraw_from : (principal, DepositArgs) -> (Result);
 }

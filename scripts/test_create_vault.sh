@@ -22,7 +22,15 @@ echo "--------------vault creator balance: $(dfx ledger balance)----------------
 CKBTC="mxzaz-hqaaa-aaaar-qaada-cai"
 CKETH="ss2fx-dyaaa-aaaar-qacoq-cai"
 XRC="uf6dk-hyaaa-aaaaq-qaaaq-cai"
-dfx canister call $VAULT_FACTORY create_vault "(record {symbol = \"test_1\";name=\"tname_1\";decimals = 8; owner = principal \"$PRINCIPAL\"; fee = 10000; fee_to = principal \"$PRINCIPAL\";null}, vec {record { canister_id = principal \"$CKBTC\"; symbol = \"BTC\" }; record { canister_id = principal \"$CKETH\"; symbol = \"ETH\" }; record { canister_id = principal \"$ICP_LEDGER\"; symbol = \"ICP\" } }, opt principal \"$XRC\", null)"
+result=`dfx canister call $VAULT_FACTORY create_vault "(record {symbol = \"test_1\";name=\"tname_1\";decimals = 8; owner = principal \"$PRINCIPAL\"; fee = 10000; fee_to = principal \"$PRINCIPAL\";null}, vec {record { canister_id = principal \"$CKBTC\"; symbol = \"BTC\" }; record { canister_id = principal \"$CKETH\"; symbol = \"ETH\" }; record { canister_id = principal \"$ICP_LEDGER\"; symbol = \"ICP\" } }, opt principal \"$XRC\", null)"`
+if [[ ! "$result" =~ " Ok = record " ]]; then
+    echo "create vault fail. $result - "
+fi
+echo "create vault result: $result"
+VAULT_CANISTER_ID=`echo $result | awk -F"principal \"" '{print $2}' | awk -F"\";" '{print $1}'`
+echo "vault canister id: $VAULT_CANISTER_ID"
+VAULT_SHARES_TOKEN_CANISTER_ID=`echo $result | awk -F"principal \"" '{print $3}' | awk -F"\";" '{print $1}'`
+echo "vault shares token canister id: $VAULT_SHARES_TOKEN_CANISTER_ID"
 echo "--------------withdraw remain icp from vault factory---------------"
 dfx canister call $VAULT_FACTORY refund_icp
 echo "--------------vault creator balance: $(dfx ledger balance)-----------------"

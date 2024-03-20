@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc, str::FromStr};
 
 use candid::{ Nat, Principal};
 use ic_exports::{ic_cdk::{self, call}, icrc_types::{icrc1::account::Subaccount, icrc2::{allowance::AllowanceArgs, approve::ApproveArgs}}};
@@ -15,6 +15,7 @@ use crate::error::VaultError;
 use crate::record::{
     Deposit,
     Withdraw,
+    Swap,
 };
 use ic_exports::icrc_types::icrc2::transfer_from::TransferFromArgs;
 use ic_exports::icrc_types::icrc1::account::Account as Account;
@@ -155,63 +156,34 @@ impl VaultCanister {
             return Err(VaultError::ZeroNav)
         }
         // mint shares
-        let exchange_rate_result = Service::new(VaultConfig::get_stable().exchange_rate_canister.clone()).get_exchange_rate(GetExchangeRateRequest{
-            timestamp: None,
-            quote_asset: Asset{
-                class: AssetClass::Cryptocurrency,
-                symbol: "USDT".to_string(),
-            },
-            base_asset: Asset{
-                class: AssetClass::Cryptocurrency,
-                symbol: token_symbol.clone(),
-            },
-        }).await.unwrap().0;
-        match exchange_rate_result {
-            GetExchangeRateResult::Ok(exchange_rate) => {
-                ic_cdk::println!("exchange rate: {:?}", exchange_rate);
-                let rate = exchange_rate.rate;
-                let decimals = exchange_rate.metadata.decimals;
-                let exchange_rate_human = (rate as f64) / (10u64.pow(decimals) as f64);
-                let amount_u128 :u128 = token_amount.clone().0.try_into().unwrap();
-                let amount = (amount_u128 as f64) / (10u64.pow(token_decimals.into()) as f64);
-                let shares_num = exchange_rate_human * amount / nav;
-                ic_cdk::println!("minting {} shares", shares_num);
-                let tx_receipt = call::<(Principal, Option<Subaccount>, Tokens128), (TxReceipt,)>(
-                    conf.shares_token.unwrap(),
-                    "mint",
-                    (caller_principal, None::<Subaccount>, Tokens128::from_f64(shares_num * (10u64.pow(8) as f64)).unwrap())
-                ).await.unwrap().0;
-                if tx_receipt.is_err() {
-                    ic_cdk::println!("mint shares error: {:?}", tx_receipt.as_ref().unwrap_err());
-                    return Err(VaultError::SharesTokenError(tx_receipt.unwrap_err()));
-                }
-                // update ledger
-                let mut ledger_data = VaultLedger::get_stable();
-                if ledger_data.tokens.is_none() {
-                    ledger_data.tokens = Some(vec![]);
-                }
-                let token_new = SupportedToken {
-                    canister_id: token_id.clone(),
-                    symbol: token_symbol,
-                };
-                if !ledger_data.tokens.as_ref().unwrap().contains(&token_new) {
-                    ledger_data.tokens.as_mut().unwrap().push(token_new);
-                }
-                VaultLedger::set_stable(ledger_data);
-                // add deposit record
-                TxRecordsData::deposit(Deposit{
-                    canister_id: token_id,
-                    amount,
-                    shares_num,
-                    eq_usd: exchange_rate_human * amount,
-                });
-                Ok(shares_num.clone())
-            },
-            GetExchangeRateResult::Err(err) => {
-                ic_cdk::println!("get exchange rate error: {:?}", err);
-                return Err(VaultError::ExchangeRateError);
-            }
+        let exchange_rate_human = self.get_exchange_rate(token_symbol.clone()).await?;
+        let amount_u128 :u128 = token_amount.clone().0.try_into().unwrap();
+        let amount = (amount_u128 as f64) / (10u64.pow(token_decimals.into()) as f64);
+        let shares_num = exchange_rate_human * amount / nav;
+        ic_cdk::println!("minting {} shares", shares_num);
+        let tx_receipt = call::<(Principal, Option<Subaccount>, Tokens128), (TxReceipt,)>(
+            conf.shares_token.unwrap(),
+            "mint",
+            (caller_principal, None::<Subaccount>, Tokens128::from_f64(shares_num * (10u64.pow(8) as f64)).unwrap())
+        ).await.unwrap().0;
+        if tx_receipt.is_err() {
+            ic_cdk::println!("mint shares error: {:?}", tx_receipt.as_ref().unwrap_err());
+            return Err(VaultError::SharesTokenError(tx_receipt.unwrap_err()));
         }
+        // update ledger
+        let token_new = SupportedToken {
+            canister_id: token_id.clone(),
+            symbol: token_symbol,
+        };
+        self.add_ledger_token(token_new);
+        // add deposit record
+        TxRecordsData::deposit(Deposit{
+            canister_id: token_id,
+            amount,
+            shares_num,
+            eq_usd: exchange_rate_human * amount,
+        });
+        Ok(shares_num.clone())
     }
 
     #[update]
@@ -232,38 +204,18 @@ impl VaultCanister {
             let token_decimals = token_ins.icrc1_decimals().await.unwrap().0;
             let token_balance = token_ins.icrc1_balance_of(Account::from(canister_id.clone())).await.unwrap().0;
             // get exchange rate
-            let exchange_rate_result = Service::new(VaultConfig::get_stable().exchange_rate_canister.clone()).get_exchange_rate(GetExchangeRateRequest{
-                timestamp: None,
-                quote_asset: Asset{
-                    class: AssetClass::Cryptocurrency,
-                    symbol: "USDT".to_string(),
-                },
-                base_asset: Asset{
-                    class: AssetClass::Cryptocurrency,
-                    symbol: support_token.symbol.clone(),
-                },
-            }).await.unwrap().0;
-            match exchange_rate_result {
-                GetExchangeRateResult::Ok(exchange_rate) => {
-                    let rate = exchange_rate.rate;
-                    let decimals = exchange_rate.metadata.decimals;
-                    let exchange_rate_human = (rate as f64) / (10u64.pow(decimals) as f64);
-                    let token_balance_u128: u128 = token_balance.clone().0.try_into().unwrap();
-                    let token_balance_amount = token_balance_u128 as f64 / (10u64.pow(token_decimals.into()) as f64);
-                    let token_aum = exchange_rate_human * token_balance_amount;
-                    token_aum_vec.push(VaultLedgerTokenAum{
-                        token_id: support_token.canister_id.clone(),
-                        balance: token_balance_amount,
-                        price: exchange_rate_human,
-                        aum: token_aum,
-                        decimals: token_decimals,
-                    });
-                },
-                GetExchangeRateResult::Err(_) => {
-                    ic_cdk::print("get exchange rate error");
-                    return Err(VaultError::ExchangeRateError);
-                }
-            };
+            let exchange_rate_human = self.get_exchange_rate(support_token.symbol.clone()).await?;
+            let token_balance_u128: u128 = token_balance.clone().0.try_into().unwrap();
+            let token_balance_amount = token_balance_u128 as f64 / (10u64.pow(token_decimals.into()) as f64);
+            let token_aum = exchange_rate_human * token_balance_amount;
+            token_aum_vec.push(VaultLedgerTokenAum{
+                token_id: support_token.canister_id.clone(),
+                balance: token_balance_amount,
+                price: exchange_rate_human,
+                aum: token_aum,
+                decimals: token_decimals,
+            });
+
         };
         // calculate withdraw amount
         let aum = token_aum_vec.iter().fold(0.0, |acc, x| acc + x.aum);
@@ -329,12 +281,12 @@ impl VaultCanister {
     }
 
     #[update]
-    pub async fn approve(&self, swap_pool_id: Principal, token_id: Principal, amount: Nat) -> Result<(), VaultError> {
+    pub async fn approve(&self, swap_pool_id: Principal, token0_id: Principal, amount: Nat) -> Result<(), VaultError> {
         let caller = ic_cdk::caller();
         if VaultConfig::get_stable().owner != caller {
             return Err(VaultError::NotController);
         }
-        let token_ins = Icrc2Token::new(token_id);
+        let token_ins = Icrc2Token::new(token0_id);
         let token_fee = token_ins.icrc1_fee().await.unwrap().0;
         let approve_result = token_ins.icrc2_approve(ApproveArgs{
             from_subaccount: None,
@@ -358,7 +310,7 @@ impl VaultCanister {
         if VaultConfig::get_stable().owner != caller {
             return Err(VaultError::NotController);
         }
-        let token_ins = Icrc2Token::new(deposit_args.token.clone());
+        let token_ins = Icrc2Token::new(Principal::from_str(&deposit_args.token).unwrap());
         let token_fee = token_ins.icrc1_fee().await.unwrap().0;
         let mut deposit_args_new = deposit_args.clone();
         deposit_args_new.amount = deposit_args.amount + token_fee.clone();
@@ -374,15 +326,41 @@ impl VaultCanister {
     }
 
     #[update]
-    pub async fn swap(&self, swap_pool_id: Principal, swap_args: swap_pool::SwapArgs) -> Result<Nat, VaultError> {
+    pub async fn swap(&self, swap_pool_id: Principal, token0: Principal, token1: Principal, swap_args: swap_pool::SwapArgs) -> Result<Swap, VaultError> {
         let caller = ic_cdk::caller();
         if VaultConfig::get_stable().owner != caller {
             return Err(VaultError::NotController);
         }
-        let swap_result = swap_pool::Service(swap_pool_id).swap(swap_args).await.unwrap().0;
+        // to do: check if token1 are supported
+        let swap_result = swap_pool::Service(swap_pool_id).swap(swap_args.clone()).await.unwrap().0;
         match swap_result {
-            swap_pool::Result_::Ok(amount) => {
-                Ok(amount)
+            swap_pool::Result_::Ok(amount_out) => {
+                let token_symbol = VaultConfig::get_stable().supported_tokens.iter().find(|item| item.canister_id == token0).unwrap().symbol.clone();
+                if token_symbol == "" {
+                    return Err(VaultError::TokenNotSupported);
+                }
+                let token0_ins = Icrc2Token::new(token0);
+                let token0_decimals = token0_ins.icrc1_decimals().await.unwrap().0;
+                let exchange_rate_human = self.get_exchange_rate(token_symbol).await?;
+                let amount_in_f64 = swap_args.clone().amountIn.parse::<f64>().unwrap() / (10u64.pow(Into::<u32>::into(token0_decimals)) as f64);
+                let token1_ins = Icrc2Token::new(token1);
+                let token1_decimals = token1_ins.icrc1_decimals().await.unwrap().0;
+                let amount_out_u128 :u128 = amount_out.clone().0.try_into().unwrap();
+                let swap_res = Swap{
+                    token0,
+                    token1,
+                    token0_amount: amount_in_f64,
+                    token1_amount: amount_out_u128 as f64 / 10u64.pow(token1_decimals.into()) as f64,
+                    eq_usd: amount_in_f64 * exchange_rate_human,
+                    pool_id: swap_pool_id,
+                };
+                TxRecordsData::swap(swap_res.clone());
+                let token1_symbol = VaultConfig::get_stable().supported_tokens.iter().find(|item| item.canister_id == token1).unwrap().symbol.clone();
+                self.add_ledger_token(SupportedToken{
+                    canister_id: token1,
+                    symbol: token1_symbol,
+                });
+                Ok(swap_res)
             },
             swap_pool::Result_::Err(err) => {
                 Err(VaultError::SwapPoolError(err))
@@ -405,5 +383,40 @@ impl VaultCanister {
                 Err(VaultError::SwapPoolError(err))
             }
         }
+    }
+
+    pub async fn get_exchange_rate(&self, symbol: String) -> Result<f64, VaultError> {
+        let exchange_rate_result = Service::new(VaultConfig::get_stable().exchange_rate_canister.clone()).get_exchange_rate(GetExchangeRateRequest{
+            timestamp: None,
+                quote_asset: Asset{
+                    class: AssetClass::Cryptocurrency,
+                    symbol: "USDT".to_string(),
+                },
+                base_asset: Asset{
+                    class: AssetClass::Cryptocurrency,
+                    symbol,
+                },
+        }).await.unwrap().0;
+        match exchange_rate_result {
+            GetExchangeRateResult::Ok(exchange_rate) => {
+                Ok(exchange_rate.rate as f64 / 10u64.pow(exchange_rate.metadata.decimals as u32) as f64)
+            },
+            GetExchangeRateResult::Err(_) => {
+                Err(VaultError::ExchangeRateError)
+            }
+        }
+    }
+
+    pub fn add_ledger_token(&self, new_token: SupportedToken) {
+        // update ledger
+        let mut ledger_data = VaultLedger::get_stable();
+        if ledger_data.tokens.is_none() {
+            ledger_data.tokens = Some(vec![]);
+        }
+        if !ledger_data.tokens.as_ref().unwrap().contains(&new_token) {
+            ledger_data.tokens.as_mut().unwrap().push(new_token);
+            VaultLedger::set_stable(ledger_data);
+        }
+        ()
     }
 }
