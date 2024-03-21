@@ -203,6 +203,7 @@ impl VaultCanister {
         self.add_ledger_token(token_new);
         // add deposit record
         let deposit_record = Deposit{
+            operator: caller_principal,
             canister_id: token_id,
             amount,
             shares_num,
@@ -259,6 +260,7 @@ impl VaultCanister {
         let mut withdraw_token_amount_vec = vec![];
         let mut withdraw_canister_ids = vec![];
         let mut withdraw_res = Withdraw{
+            operator: caller_principal,
             shares_nums: withdraw_shares,
             canister_ids: vec![],
             amounts: vec![],
@@ -419,6 +421,7 @@ impl VaultCanister {
                 let token1_decimals = token1_ins.icrc1_decimals().await.unwrap().0;
                 let amount_out_u128 :u128 = amount_out.clone().0.try_into().unwrap();
                 let swap_res = Swap{
+                    operator: caller,
                     token0,
                     token1,
                     token0_amount: amount_in_f64,

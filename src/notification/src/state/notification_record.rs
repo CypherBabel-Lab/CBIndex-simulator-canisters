@@ -177,7 +177,6 @@ impl NotificationRecords {
 
     pub fn followed(&mut self, key: Principal, vault: Principal) -> TxId {
         let id = self.next_id(key);
-        ic_cdk::print(format!("followed: {}",id));
         self.push(key,NotificationRecord {
             id,
             record: Notification::Followed(vault),
@@ -247,8 +246,6 @@ impl NotificationRecords {
 
     fn increase_total_tx_count(key: Principal) {
         let prev_count = Self::read_total_tx_count(key);
-        ic_cdk::println!("prev_count: {}",prev_count);
-        ic_cdk::println!("key: {}",key);
         TOTAL_RECORD_COUNT.with(|map| {
             map
                 .borrow_mut()

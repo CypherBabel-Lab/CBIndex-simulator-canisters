@@ -11,6 +11,7 @@ type ApproveError = variant {
 };
 type Deposit = record {
   shares_num : float64;
+  operator : principal;
   canister_id : principal;
   eq_usd : float64;
   amount : float64;
@@ -36,6 +37,7 @@ type Result_2 = variant { Ok : Swap; Err : VaultError };
 type Result_3 = variant { Ok : Withdraw; Err : VaultError };
 type SupportedToken = record { canister_id : principal; symbol : text };
 type Swap = record {
+  operator : principal;
   token0_amount : float64;
   token0 : principal;
   token1 : principal;
@@ -113,6 +115,7 @@ type VaultLedgerTokenAum = record {
 type VaultLedgerTokensAum = record { datas : opt vec VaultLedgerTokenAum };
 type Withdraw = record {
   canister_ids : vec principal;
+  operator : principal;
   amounts : vec float64;
   eq_usds : vec float64;
   shares_nums : float64;

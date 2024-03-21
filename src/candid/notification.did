@@ -1,5 +1,6 @@
 type Deposit = record {
   shares_num : float64;
+  operator : principal;
   canister_id : principal;
   eq_usd : float64;
   amount : float64;
@@ -46,6 +47,7 @@ type Record = variant {
 };
 type Result = variant { Ok; Err : NotificationError };
 type Swap = record {
+  operator : principal;
   token0_amount : float64;
   token0 : principal;
   token1 : principal;
@@ -55,6 +57,7 @@ type Swap = record {
 };
 type Withdraw = record {
   canister_ids : vec principal;
+  operator : principal;
   amounts : vec float64;
   eq_usds : vec float64;
   shares_nums : float64;
