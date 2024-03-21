@@ -29,6 +29,7 @@ pub struct VaultConfig {
     pub supproted_protocol: Option<Vec<Principal>>,
     pub shares_token: Option<Principal>,
     pub exchange_rate_canister: Principal,
+    pub notification_canister: Principal,
 }
 
 impl Default for VaultConfig {
@@ -42,6 +43,7 @@ impl Default for VaultConfig {
             supproted_protocol:None,
             shares_token: None,
             exchange_rate_canister: Principal::anonymous(),
+            notification_canister: Principal::anonymous(),
         }
     }
 }

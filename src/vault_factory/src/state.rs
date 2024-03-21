@@ -88,6 +88,20 @@ impl State {
         });
     }
 
+    pub fn get_vault_factory_notification_canister(&self) -> Option<Principal> {
+        VAULT_FACTORY_CONFIG_CELL.with(|cell| cell.borrow().get().notification_canister.clone())
+    }
+
+    pub fn set_vault_factory_notification_canister(&mut self, notification_canister: Option<Principal>) {
+        VAULT_FACTORY_CONFIG_CELL.with(|cell| {
+            let mut config = cell.borrow().get().clone();
+            config.notification_canister = notification_canister;
+            cell.borrow_mut()
+                .set(config)
+                .expect("failed to set vault factory config to stable storage");
+        });
+    }
+
     pub fn gey_vault_factory_config(&self) -> VaultFactoryConfig {
         VAULT_FACTORY_CONFIG_CELL.with(|cell| cell.borrow().get().clone())
     }
@@ -174,12 +188,14 @@ impl BoundedStorable for PrincipalValue {
 #[derive(Deserialize, CandidType, Clone, Debug)]
 pub struct VaultFactoryConfig {
     pub controller: Principal,
+    pub notification_canister: Option<Principal>,
 }
 
 impl Default for VaultFactoryConfig {
     fn default() -> Self {
         VaultFactoryConfig {
             controller: Principal::anonymous(),
+            notification_canister: None,
         }
     }
 }

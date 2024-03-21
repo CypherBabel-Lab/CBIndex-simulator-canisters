@@ -2762,6 +2762,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "notification"
+version = "0.1.0"
+dependencies = [
+ "candid 0.8.4",
+ "canister-sdk",
+ "ic-exports",
+ "ic-stable-structures 0.3.56",
+ "serde",
+ "thiserror",
+ "vault",
+]
+
+[[package]]
 name = "num-bigint"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"

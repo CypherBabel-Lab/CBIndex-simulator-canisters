@@ -24,6 +24,7 @@ use ic_exports::icrc_types::icrc2::allowance::AllowanceArgs;
 use ic_exports::icrc_types::icrc2::transfer_from::TransferFromArgs;
 use ic_exports::icrc_types::icrc1::account::Account as Account;
 use token::state::config::Metadata;
+use vault::notification;
 use vault::state::config::{VaultConfig,SupportedToken};
 use vault::icrc:: icrc1:: Icrc1;
 use vault::icrc:: icrc2::{ Icrc2, Icrc2Token};
@@ -99,6 +100,16 @@ impl VaultFactoryCanister {
     }
 
     #[update]
+    pub fn set_notification_canister(&self, notification_canister: Principal) -> Result<(), VaultFactoryError> {
+        let caller = canister_sdk::ic_kit::ic::caller();
+        if caller != state::get_state().get_vault_factory_controller() {
+            return Err(VaultFactoryError::NotController);
+        }
+        state::get_state().set_vault_factory_notification_canister(Some(notification_canister));
+        Ok(())
+    }
+
+    #[update]
     pub async fn create_vault(
         &self,
         info: Metadata,
@@ -106,6 +117,10 @@ impl VaultFactoryCanister {
         exchange_rate_canister: Option<Principal>,
         controller: Option<Principal>,
     ) -> Result<PrincipalValue, VaultFactoryError> {
+        let notification_canister = state::get_state().get_vault_factory_notification_canister();
+        if notification_canister.is_none() {
+            return Err(VaultFactoryError::NoNotificationCanister);
+        }
         if info.name.is_empty() {
             return Err(VaultFactoryError::InvalidConfiguration(
                 "name",
@@ -142,6 +157,7 @@ impl VaultFactoryCanister {
             supproted_protocol: None,
             deploy_time: time(),
             shares_token: None,
+            notification_canister: notification_canister.unwrap().clone(),
         };
         self.set_canister_wasm(VAULT_WASM.to_vec())?;
         let vault_principal = self
@@ -159,7 +175,17 @@ impl VaultFactoryCanister {
             .await?;  // create a token canister
         let principal_value = PrincipalValue::new(vault_principal, shares_token_principal);
         state::get_state().insert_vault(key, principal_value.clone());
-        Ok(principal_value)
+        // add notification canister whitelist
+        let notifi_result = notification::Service(notification_canister.unwrap()).add_whitelist(vault_principal).await.unwrap().0;
+        match notifi_result {
+            notification::Result_::Ok=> {
+                return Ok(principal_value);
+            },
+            notification::Result_::Err(_) => {
+                return Err(VaultFactoryError::NotificationError);
+            }
+            
+        }
     }
 
     fn set_canister_wasm(&self, wasm: Vec<u8>) -> Result<(), VaultFactoryError> {

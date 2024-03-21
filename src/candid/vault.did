@@ -79,6 +79,7 @@ type VaultConfig = record {
   name : text;
   supproted_protocol : opt vec principal;
   exchange_rate_canister : principal;
+  notification_canister : principal;
   supported_tokens : vec SupportedToken;
   symbol : text;
   shares_token : opt principal;
@@ -93,10 +94,12 @@ type VaultError = variant {
   ICRC2ApproveError : ApproveError;
   InvalidWithdrawArgs;
   ICRC2TransferError : TransferFromError;
+  NotFollowed;
   SharesTokenError : TxError;
   InvalidConfiguration : record { text; text };
   AssetNotSupported;
   InsufficientTokenBalance;
+  AlreadyFollowed;
   ZeroNav;
 };
 type VaultLedger = record { tokens : opt vec SupportedToken };
@@ -118,14 +121,18 @@ service : (VaultConfig) -> {
   approve : (principal, principal, nat) -> (Result);
   deposit : (principal, nat) -> (Result_1);
   deposit_from : (principal, DepositArgs) -> (Result);
+  follow : () -> (Result);
   get_aum : () -> (VaultLedgerTokensAum);
   get_config : () -> (VaultConfig) query;
+  get_followed : () -> (vec principal) query;
   get_ledger : () -> (VaultLedger) query;
   get_nav : () -> (float64);
   get_tx_records : (nat64, opt nat64) -> (PaginatedResult) query;
+  if_followed : () -> (bool) query;
   pkg_version : () -> (text) query;
   set_shares_token : (principal) -> (Result);
   swap : (principal, principal, principal, SwapArgs) -> (Result_2);
+  unfollow : () -> (Result);
   withdraw : (nat16) -> (Result_3);
   withdraw_from : (principal, DepositArgs) -> (Result);
 }

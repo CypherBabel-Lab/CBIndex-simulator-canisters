@@ -18,6 +18,12 @@
       "wasm": "target/wasm32-unknown-unknown/release/vault.wasm",
       "type": "custom"
     },
+    "notification": {
+      "build": "bash scripts/build_notification.sh",
+      "candid": "src/candid/notification.did",
+      "wasm": "target/wasm32-unknown-unknown/release/notification.wasm",
+      "type": "custom"
+    },
     "icp_ledger_canister": {
       "type": "custom",
       "candid": "https://raw.githubusercontent.com/dfinity/ic/087190165198a9dc7b3c9cf80e0812c0c03964c6/rs/rosetta-api/icp_ledger/ledger.did",

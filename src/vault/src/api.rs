@@ -9,7 +9,11 @@ use canister_sdk::{
 };
 use token::{state::ledger::TxReceipt, tx_record::TxId};
 
-use crate::{icp_swap::swap_pool, icrc::{icrc1::Icrc1, icrc2::{Icrc2,Icrc2Token}}, state::{config::{SupportedToken, VaultConfig}, ledger::{VaultLedgerTokenAum, VaultLedgerTokensAum}, tx_record::{PaginatedResult, TxRecordsData}}};
+use crate::{icp_swap::swap_pool,
+    icrc::{icrc1::Icrc1, icrc2::{Icrc2,Icrc2Token}},
+    state::{
+        config::{SupportedToken, VaultConfig}, follow::Followed, ledger::{VaultLedgerTokenAum, VaultLedgerTokensAum}, tx_record::{PaginatedResult, TxRecordsData}
+    }};
 use crate::state::ledger::VaultLedger;
 use crate::error::VaultError;
 use crate::record::{
@@ -26,6 +30,8 @@ use crate::exchange_rate:: {
     GetExchangeRateResult,
     Service,
 };
+
+use crate::notification;
 
 const PERCENTAGE_DIVISOR: u16 = 10000;
 
@@ -84,6 +90,25 @@ impl VaultCanister {
     #[query]
     pub fn get_tx_records(&self, count:usize, id:Option<TxId>) -> PaginatedResult {
         TxRecordsData::get_records(count, id)
+    }
+
+    #[query]
+    pub fn if_followed(&self) -> bool {
+        let caller = ic_cdk::caller();
+        let ledger_data = Followed::get_stable();
+        if ledger_data.data.is_none() {
+            return false;
+        }
+        ledger_data.data.as_ref().unwrap().contains(&caller)
+    }
+
+    #[query]
+    pub fn get_followed(&self) -> Vec<Principal> {
+        let ledger_data = Followed::get_stable();
+        if ledger_data.data.is_none() {
+            return vec![];
+        }
+        ledger_data.data.as_ref().unwrap().clone()
     }
 
     #[update]
@@ -177,12 +202,18 @@ impl VaultCanister {
         };
         self.add_ledger_token(token_new);
         // add deposit record
-        TxRecordsData::deposit(Deposit{
+        let deposit_record = Deposit{
             canister_id: token_id,
             amount,
             shares_num,
             eq_usd: exchange_rate_human * amount,
-        });
+        };
+        TxRecordsData::deposit(deposit_record.clone());
+        // add notification
+        let followed_data = Followed::get_stable();
+        if followed_data.data.is_some() {
+            notification::Service(conf.notification_canister.clone()).add_notification_deposit(followed_data.data.unwrap(), deposit_record).await.unwrap().0;
+        }
         Ok(shares_num.clone())
     }
 
@@ -277,9 +308,50 @@ impl VaultCanister {
         }
         // add withdraw record
         TxRecordsData::withdraw(withdraw_res.clone());
+        // add notification
+        let followed_data = Followed::get_stable();
+        if followed_data.data.is_some() {
+            notification::Service(VaultConfig::get_stable().notification_canister.clone()).add_notification_withdraw(followed_data.data.unwrap(), withdraw_res.clone()).await.unwrap().0;
+        }
         Ok(withdraw_res)
     }
 
+    #[update]
+    pub async fn follow(&self) -> Result<(), VaultError> {
+        if self.if_followed() {
+            return Err(VaultError::AlreadyFollowed);
+        }
+        let caller = ic_cdk::caller();
+        let mut ledger_data = Followed::get_stable();
+        if ledger_data.data.is_none() {
+            ledger_data.data = Some(vec![]);
+        }
+        ledger_data.data.as_mut().unwrap().push(caller);
+        Followed::set_stable(ledger_data);
+        // add notification
+        notification::Service(VaultConfig::get_stable().notification_canister.clone()).add_notification_followed(caller).await.unwrap().0;
+        Ok(())
+    }
+
+    #[update]
+    pub async fn unfollow(&self) -> Result<(), VaultError> {
+        if !self.if_followed() {
+            return Err(VaultError::NotFollowed);
+        }
+        let caller = ic_cdk::caller();
+        let mut ledger_data = Followed::get_stable();
+        if ledger_data.data.is_none() {
+            return Err(VaultError::NotFollowed);
+        }
+        let index = ledger_data.data.as_ref().unwrap().iter().position(|x| *x == caller).unwrap();
+        ledger_data.data.as_mut().unwrap().remove(index);
+        Followed::set_stable(ledger_data);
+        // add notification
+        notification::Service(VaultConfig::get_stable().notification_canister.clone()).add_notification_unfollowed(caller).await.unwrap().0;
+        Ok(())
+    }
+
+    /// only the controller can swap( approve -> deposit_from -> swap -> withdraw_from )
     #[update]
     pub async fn approve(&self, swap_pool_id: Principal, token0_id: Principal, amount: Nat) -> Result<(), VaultError> {
         let caller = ic_cdk::caller();
@@ -354,12 +426,18 @@ impl VaultCanister {
                     eq_usd: amount_in_f64 * exchange_rate_human,
                     pool_id: swap_pool_id,
                 };
+                // add record
                 TxRecordsData::swap(swap_res.clone());
                 let token1_symbol = VaultConfig::get_stable().supported_tokens.iter().find(|item| item.canister_id == token1).unwrap().symbol.clone();
                 self.add_ledger_token(SupportedToken{
                     canister_id: token1,
                     symbol: token1_symbol,
                 });
+                // add notification
+                let followed_data = Followed::get_stable();
+                if followed_data.data.is_some() {
+                    notification::Service(VaultConfig::get_stable().notification_canister.clone()).add_notification_swap(followed_data.data.unwrap(), swap_res.clone()).await.unwrap().0;
+                }
                 Ok(swap_res)
             },
             swap_pool::Result_::Err(err) => {

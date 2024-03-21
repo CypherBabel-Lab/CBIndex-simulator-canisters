@@ -7,11 +7,22 @@ echo "==> Create a new vault"
 source ./scripts/test_create_vault.sh
 echo "==> Deposit ckbtc(local) to the vault"
 
-VAULT_CANISTER_ID="ahw5u-keaaa-aaaaa-qaaha-cai"
-VAULT_SHARES_TOKEN_CANISTER_ID="aax3a-h4aaa-aaaaa-qaahq-cai"
 CKBTC_CANISTER_ID="mxzaz-hqaaa-aaaar-qaada-cai"
 CKETH_CANISTER_ID="ss2fx-dyaaa-aaaar-qacoq-cai"
 ICP_CANISTER_ID="ryjl3-tyaaa-aaaaa-aaaba-cai"
+
+dfx identity new follower_1 --storage-mode=plaintext
+dfx identity use follower_1
+dfx canister call $VAULT_CANISTER_ID follow
+
+dfx identity new follower_2 --storage-mode=plaintext
+dfx identity use follower_2
+dfx canister call $VAULT_CANISTER_ID follow
+
+dfx identity new follower_3 --storage-mode=plaintext
+dfx identity use follower_3
+dfx canister call $VAULT_CANISTER_ID follow
+dfx canister call $VAULT_CANISTER_ID unfollow
 
 dfx identity use vault_creator
 dfx canister call $VAULT_CANISTER_ID set_shares_token "(principal \"$VAULT_SHARES_TOKEN_CANISTER_ID\")"
@@ -65,5 +76,4 @@ dfx canister call $VAULT_CANISTER_ID withdraw_from "(principal \"$poolId\", reco
 echo "--------------check vault assets---------------------"
 dfx canister call $VAULT_CANISTER_ID get_ledger
 dfx canister call $VAULT_CANISTER_ID get_aum
-dfx stop
-
+#dfx stop

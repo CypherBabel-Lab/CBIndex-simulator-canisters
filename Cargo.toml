@@ -5,6 +5,7 @@ members = [
     "src/token/impl",
     "src/vault",
     "src/vault_factory",
+    "src/notification",
 ]
 
 [workspace.package]

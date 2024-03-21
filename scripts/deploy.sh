@@ -16,3 +16,5 @@ echo "--------------------Deploying the xrc canister----------------------------
 source ./scripts/deploy_xrc.sh
 echo "--------------------Deploying the vault factory canister-------------------------"
 source ./scripts/deploy_vault_factory.sh
+echo "--------------------Deploying the notification canister--------------------------"
+source ./scripts/deploy_notification.sh

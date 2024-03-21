@@ -1,0 +1,73 @@
+type Deposit = record {
+  shares_num : float64;
+  canister_id : principal;
+  eq_usd : float64;
+  amount : float64;
+};
+type Interval = variant {
+  PerHour;
+  PerWeek;
+  PerDay;
+  Period : record { seconds : nat64 };
+  PerMinute;
+};
+type MetricsData = record {
+  stable_memory_size : nat64;
+  cycles : nat64;
+  heap_memory_size : nat64;
+};
+type MetricsMap = record {
+  map : vec record { nat64; MetricsData };
+  interval : Interval;
+  history_length_nanos : nat64;
+};
+type MetricsStorage = record { metrics : MetricsMap };
+type Notification = variant {
+  Followed : principal;
+  TxRecord : record { principal; Record };
+  Unfollowed : principal;
+};
+type NotificationError = variant { NotController; NotWhitelist };
+type NotificationRecord = record {
+  id : nat64;
+  timestamp : nat64;
+  "record" : Notification;
+};
+type PaginatedResult = record {
+  result : vec NotificationRecord;
+  next : opt nat64;
+};
+type Record = variant {
+  Withdraw : Withdraw;
+  Lend : record {};
+  Deposit : Deposit;
+  Swap : Swap;
+  Borrow : record {};
+};
+type Result = variant { Ok; Err : NotificationError };
+type Swap = record {
+  token0_amount : float64;
+  token0 : principal;
+  token1 : principal;
+  token1_amount : float64;
+  eq_usd : float64;
+  pool_id : principal;
+};
+type Withdraw = record {
+  canister_ids : vec principal;
+  amounts : vec float64;
+  eq_usds : vec float64;
+  shares_nums : float64;
+};
+service : (principal) -> {
+  get_curr_metrics : () -> (MetricsData) query;
+  get_metrics : () -> (MetricsStorage) query;
+  add_notification_deposit : (vec principal, Deposit) -> (Result);
+  add_notification_followed : (principal) -> (Result);
+  add_notification_swap : (vec principal, Swap) -> (Result);
+  add_notification_unfollowed : (principal) -> (Result);
+  add_notification_withdraw : (vec principal, Withdraw) -> (Result);
+  add_whitelist : (principal) -> (Result);
+  get_records : (nat64, opt nat64) -> (PaginatedResult) query;
+  pkg_version : () -> (text) query;
+}

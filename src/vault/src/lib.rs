@@ -5,6 +5,7 @@ pub mod error;
 pub mod icrc;
 pub mod icp_swap;
 pub mod record;
+pub mod notification;
 use crate::icp_swap::swap_pool;
 use candid::Nat;
 pub use ic_exports::icrc_types::icrc1::account::Account as Account;

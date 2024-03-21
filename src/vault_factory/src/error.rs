@@ -19,4 +19,13 @@ pub enum VaultFactoryError {
 
     #[error("tx error when transferring ICP")]
     TxError(TransferFromError),
+
+    #[error("notification error when add a new vault to the whitelist")]
+    NotificationError,
+
+    #[error("no notification canister")]
+    NoNotificationCanister,
+
+    #[error("not controller")]
+    NotController
 }

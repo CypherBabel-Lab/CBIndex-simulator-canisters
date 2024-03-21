@@ -4,6 +4,7 @@ use thiserror::Error;
 use ic_exports::icrc_types::icrc2::{approve::ApproveError,  transfer_from::TransferFromError};
 
 use crate::icp_swap::swap_pool;
+
 #[derive(Debug, Error, CandidType, Deserialize)]
 pub enum VaultError {
     #[error("the property {0} has invalid value: {0}")]
@@ -47,4 +48,10 @@ pub enum VaultError {
 
     #[error("Swap pool error")]
     SwapPoolError(swap_pool::Error),
+
+    #[error("already followed")]
+    AlreadyFollowed,
+
+    #[error("not followed")]
+    NotFollowed
 }

@@ -46,8 +46,14 @@ type TransferFromError = variant {
   InsufficientFunds : record { balance : nat };
 };
 type UpgradeResult = variant { Error : text; Noop; Upgraded };
-type VaultFactoryConfig = record { controller : principal };
+type VaultFactoryConfig = record {
+  controller : principal;
+  notification_canister : opt principal;
+};
 type VaultFactoryError = variant {
+  NoNotificationCanister;
+  NotController;
+  NotificationError;
   InvalidIcpAllowance;
   FactoryError : FactoryError;
   AlreadyExists;
@@ -82,6 +88,7 @@ service : (principal, opt principal) -> {
   get_vault : (text) -> (opt record { principal; principal }) query;
   get_vaults : () -> (vec record { principal; principal }) query;
   pkg_version : () -> (text) query;
+  set_notification_canister : (principal) -> (Result_1);
   transfer_icp : () -> (Result_1);
   upgrade : () -> (Result_2);
 }
