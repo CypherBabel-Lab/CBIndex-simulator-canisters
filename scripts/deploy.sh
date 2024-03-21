@@ -18,3 +18,7 @@ echo "--------------------Deploying the vault factory canister------------------
 source ./scripts/deploy_vault_factory.sh
 echo "--------------------Deploying the notification canister--------------------------"
 source ./scripts/deploy_notification.sh
+VAULT_FACTORY=$(dfx canister id vault_factory)
+NOTIFICATION_CANISTER=$(dfx canister id notification)
+echo "--------------set notification canister id for vault factory-----------------"
+dfx canister call $VAULT_FACTORY set_notification_canister "(principal \"$NOTIFICATION_CANISTER\")"

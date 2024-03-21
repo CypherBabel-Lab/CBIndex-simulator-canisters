@@ -8,10 +8,6 @@ dfx identity new vault_creator --storage-mode=plaintext
 dfx identity use vault_creator
 CREATOR_ACC_ID=$(dfx ledger account-id)
 dfx identity use default
-VAULT_FACTORY=$(dfx canister id vault_factory)
-NOTIFICATION_CANISTER=$(dfx canister id notification)
-echo "--------------set notification canister id for vault factory-----------------"
-dfx canister call $VAULT_FACTORY set_notification_canister "(principal \"$NOTIFICATION_CANISTER\")"
 ICP_LEDGER=$(dfx canister id icp_ledger_canister)
 echo "--------------transfer 10 icp to vault creator---------------------"
 dfx ledger transfer --memo 1234567 --amount 10 $CREATOR_ACC_ID
