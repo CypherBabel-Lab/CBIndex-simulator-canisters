@@ -68,9 +68,9 @@ impl Service {
   ) -> Result<(Result_,)> {
     ic_cdk::call(self.0, "add_notification_deposit", (arg0,arg1,)).await
   }
-  pub async fn add_notification_followed(&self, arg0: Principal) -> Result<
+  pub async fn add_notification_followed(&self, arg0: Principal, arg1: Principal) -> Result<
     (Result_,)
-  > { ic_cdk::call(self.0, "add_notification_followed", (arg0,)).await }
+  > { ic_cdk::call(self.0, "add_notification_followed", (arg0,arg1,)).await }
   pub async fn add_notification_swap(
     &self,
     arg0: Vec<Principal>,
@@ -78,9 +78,9 @@ impl Service {
   ) -> Result<(Result_,)> {
     ic_cdk::call(self.0, "add_notification_swap", (arg0,arg1,)).await
   }
-  pub async fn add_notification_unfollowed(&self, arg0: Principal) -> Result<
+  pub async fn add_notification_unfollowed(&self, arg0: Principal, arg1: Principal) -> Result<
     (Result_,)
-  > { ic_cdk::call(self.0, "add_notification_unfollowed", (arg0,)).await }
+  > { ic_cdk::call(self.0, "add_notification_unfollowed", (arg0,arg1,)).await }
   pub async fn add_notification_withdraw(
     &self,
     arg0: Vec<Principal>,

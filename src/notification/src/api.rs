@@ -80,18 +80,18 @@ impl NotificationCanister {
     }
 
     #[update]
-    fn add_notification_followed(&self, user: Principal) -> Result<(), NotificationError> {
+    fn add_notification_followed(&self, key:Principal, user: Principal) -> Result<(), NotificationError> {
         let caller = ic_cdk::caller();
         self.check_whitelist(caller)?;
-        NotificationRecordsData::followed(user,caller);
+        NotificationRecordsData::followed(key, user,caller);
         Ok(())
     }
 
     #[update]
-    fn add_notification_unfollowed(&self, user: Principal) -> Result<(), NotificationError> {
+    fn add_notification_unfollowed(&self, key:Principal, user: Principal) -> Result<(), NotificationError> {
         let caller = ic_cdk::caller();
         self.check_whitelist(caller)?;
-        NotificationRecordsData::unfollowed(user,caller);
+        NotificationRecordsData::unfollowed(key, user,caller);
         Ok(())
     }
 

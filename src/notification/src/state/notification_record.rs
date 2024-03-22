@@ -60,12 +60,12 @@ impl NotificationRecordsData {
         Self::with_tx_records(key,|tx_records| tx_records.get_records(count, index_id))
     }
 
-    pub fn followed(key: Principal, vault: Principal) -> TxId {
-        Self::with_tx_records(key,|tx_records| tx_records.followed(key,vault))
+    pub fn followed(key: Principal, user: Principal, vault: Principal) -> TxId {
+        Self::with_tx_records(key,|tx_records| tx_records.followed(key, user, vault))
     }
 
-    pub fn unfollowed(key: Principal, vault: Principal) -> TxId {
-        Self::with_tx_records(key,|tx_records| tx_records.unfollowed(key,vault))
+    pub fn unfollowed(key: Principal, user: Principal, vault: Principal) -> TxId {
+        Self::with_tx_records(key,|tx_records| tx_records.unfollowed(key, user, vault))
     }
 
     pub fn deposit(key: Principal, vault: Principal, record: Deposit) -> TxId {
@@ -106,8 +106,8 @@ pub struct PaginatedResult {
 
 #[derive(Debug, Clone, CandidType, Deserialize)]
 pub enum Notification {
-    Followed(Principal),
-    Unfollowed(Principal),
+    Followed(Principal, Principal),  // (follower, vault)
+    Unfollowed(Principal, Principal), // (follower, vault)
     TxRecord(Principal, Record),
 }
 
@@ -175,21 +175,21 @@ impl NotificationRecords {
         }
     }
 
-    pub fn followed(&mut self, key: Principal, vault: Principal) -> TxId {
+    pub fn followed(&mut self, key: Principal, user: Principal, vault: Principal) -> TxId {
         let id = self.next_id(key);
         self.push(key,NotificationRecord {
             id,
-            record: Notification::Followed(vault),
+            record: Notification::Followed(user, vault),
             timestamp: ic_cdk::api::time(),
         });
         id
     }
 
-    pub fn unfollowed(&mut self, key: Principal, vault: Principal) -> TxId {
+    pub fn unfollowed(&mut self, key: Principal, user: Principal, vault: Principal) -> TxId {
         let id = self.next_id(key);
         self.push(key,NotificationRecord {
             id,
-            record: Notification::Unfollowed(vault),
+            record: Notification::Unfollowed(user, vault),
             timestamp: ic_cdk::api::time(),
         });
         id

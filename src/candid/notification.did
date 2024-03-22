@@ -24,9 +24,9 @@ type MetricsMap = record {
 };
 type MetricsStorage = record { metrics : MetricsMap };
 type Notification = variant {
-  Followed : principal;
+  Followed : record { principal; principal };
   TxRecord : record { principal; Record };
-  Unfollowed : principal;
+  Unfollowed : record { principal; principal };
 };
 type NotificationError = variant { NotController; NotWhitelist };
 type NotificationRecord = record {
@@ -66,9 +66,9 @@ service : (principal) -> {
   get_curr_metrics : () -> (MetricsData) query;
   get_metrics : () -> (MetricsStorage) query;
   add_notification_deposit : (vec principal, Deposit) -> (Result);
-  add_notification_followed : (principal) -> (Result);
+  add_notification_followed : (principal, principal) -> (Result);
   add_notification_swap : (vec principal, Swap) -> (Result);
-  add_notification_unfollowed : (principal) -> (Result);
+  add_notification_unfollowed : (principal, principal) -> (Result);
   add_notification_withdraw : (vec principal, Withdraw) -> (Result);
   add_whitelist : (principal) -> (Result);
   get_records : (nat64, opt nat64) -> (PaginatedResult) query;

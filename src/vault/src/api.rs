@@ -331,7 +331,7 @@ impl VaultCanister {
         ledger_data.data.as_mut().unwrap().push(caller);
         Followed::set_stable(ledger_data);
         // add notification
-        notification::Service(VaultConfig::get_stable().notification_canister.clone()).add_notification_followed(caller).await.unwrap().0;
+        notification::Service(VaultConfig::get_stable().notification_canister.clone()).add_notification_followed(VaultConfig::get_stable().owner, caller).await.unwrap().0;
         Ok(())
     }
 
@@ -349,7 +349,7 @@ impl VaultCanister {
         ledger_data.data.as_mut().unwrap().remove(index);
         Followed::set_stable(ledger_data);
         // add notification
-        notification::Service(VaultConfig::get_stable().notification_canister.clone()).add_notification_unfollowed(caller).await.unwrap().0;
+        notification::Service(VaultConfig::get_stable().notification_canister.clone()).add_notification_unfollowed(VaultConfig::get_stable().owner, caller).await.unwrap().0;
         Ok(())
     }
 
