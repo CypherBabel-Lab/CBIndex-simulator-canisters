@@ -72,5 +72,6 @@ service : (principal) -> {
   add_notification_withdraw : (vec principal, Withdraw) -> (Result);
   add_whitelist : (principal) -> (Result);
   get_records : (nat64, opt nat64) -> (PaginatedResult) query;
+  get_white_list : () -> (vec principal) query;
   pkg_version : () -> (text) query;
 }

@@ -59,6 +59,11 @@ impl NotificationCanister {
         NotificationRecordsData::get_records(caller, count, id)
     }
 
+    #[query]
+    fn get_white_list(&self) -> Vec<Principal> {
+        Whitelist::get_stable().data.unwrap_or_default()
+    }
+
     #[update]
     fn add_whitelist(&self, principal: Principal) -> Result<(), NotificationError> {
         let caller = ic_cdk::caller();
@@ -66,11 +71,11 @@ impl NotificationCanister {
             return Err(NotificationError::NotController);
         }
         if Whitelist::get_stable().data.is_some() {
-            let whitelist = Whitelist::get_stable();
+            let mut whitelist = Whitelist::get_stable();
             if whitelist.data.clone().unwrap().contains(&principal) {
                 return Ok(());
             }
-            whitelist.data.clone().unwrap().push(principal);
+            whitelist.data.as_mut().unwrap().push(principal);
             Whitelist::set_stable(whitelist);
         } else {
             let data = vec![principal];
@@ -83,6 +88,10 @@ impl NotificationCanister {
     fn add_notification_followed(&self, key:Principal, user: Principal) -> Result<(), NotificationError> {
         let caller = ic_cdk::caller();
         self.check_whitelist(caller)?;
+        ic_cdk::println!("add_notification_followed");
+        ic_cdk::println!("{:?}", key);
+        ic_cdk::println!("{:?}", user);
+        ic_cdk::println!("{:?}", caller);
         NotificationRecordsData::followed(key, user,caller);
         Ok(())
     }
