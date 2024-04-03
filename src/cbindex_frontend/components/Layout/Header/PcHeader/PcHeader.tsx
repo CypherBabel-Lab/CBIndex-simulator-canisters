@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import classes from "./style.module.less";
 import Logo from "../Header/Logo/Logo";
+import { BellOutlined } from '@ant-design/icons';
 import SoundNotice from "../SoundNotice/SoundNotice";
 import { ConnectButton, ConnectDialog, useWallet, useConnect, useDialog, useProviders } from "@connect2ic/react"
 const headerMenuList = [
@@ -14,16 +15,7 @@ import { Link } from "react-router-dom";
 const PcHeadr = () => {
   const { open, close, isOpen } = useDialog()
   const {
-    principal,
-    connect,
     disconnect,
-    status,
-    isInitializing,
-    isIdle,
-    isConnecting,
-    isConnected,
-    isDisconnecting,
-    activeProvider,
   } = useConnect({
     onConnect: () => {
       // Signed in
@@ -35,7 +27,6 @@ const PcHeadr = () => {
   const [wallet] = useWallet()
   const [providers] = useProviders()
   // console.log(wallet);
-  // console.log(providers);
   return (
     <div className={classes.container}>
       <div className={classes.headerTopLayer}>
@@ -67,7 +58,16 @@ const PcHeadr = () => {
               );
             })}
           </div>
-          <div>
+          <div style={{
+            display: "flex",
+            alignItems: "center"
+          }}>
+            <Link to={"/notification"}>
+              <BellOutlined style={{
+                marginRight: "8px",
+                cursor: "pointer"
+              }} />
+            </Link>
             {
               wallet ? <div className="walletBtn" onClick={() => {
                 disconnect()

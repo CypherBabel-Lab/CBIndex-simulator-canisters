@@ -1,0 +1,1 @@
+export const decimal = 100000000

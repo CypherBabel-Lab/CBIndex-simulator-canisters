@@ -225,6 +225,23 @@ button {
     align-items: center;
 }
 
+.disabled {
+    display: flex;
+    font-size: 14px;
+    color: white !important;
+    justify-content: center;
+    padding: var(--padding-sm) var(--padding-md);
+    border-radius: var(--border-radius-md);
+    border: none;
+    cursor: pointer;
+    align-items: center;
+    background: linear-gradient(90deg, #db5462, #a644f1);
+    opacity: 0.5;
+    cursor: not-allowed;
+    align-items: center;
+}
+
+
 .switchNetworksBtn:hover {
     background: linear-gradient(90deg, #a644f1, #db5462);
 }

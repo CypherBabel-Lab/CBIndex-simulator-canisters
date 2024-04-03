@@ -75,6 +75,11 @@
       "candid": "test/icp_swap/SwapFactory/SwapFactory.did",
       "wasm": "test/icp_swap/SwapFactory/SwapFactory.wasm"
     },
+    "SwapPool": {
+      "type": "custom",
+      "candid": "src/candid/icp-swap/swap-pool.did",
+      "wasm": ""
+    },
     "PasscodeManager": {
       "type": "custom",
       "candid": "test/icp_swap/PasscodeManager/PasscodeManager.did",
@@ -84,7 +89,9 @@
       "type": "custom",
       "candid": "test/icp_swap/PositionIndex/PositionIndex.did",
       "wasm": "test/icp_swap/PositionIndex/PositionIndex.wasm",
-      "dependencies": ["SwapFactory"]
+      "dependencies": [
+        "SwapFactory"
+      ]
     },
     "TrustedCanisterManager": {
       "type": "custom",

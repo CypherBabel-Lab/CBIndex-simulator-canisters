@@ -14,7 +14,7 @@ import token from '../../utils/tokenInfo/token.json'
 import Chart from "../../components/Chart/Chart";
 import classes from "./style.module.less";
 
-import { createActor } from '../../../declarations/vault/index'
+import { idlFactory } from '../../../declarations/vault/index'
 const rule = /^[a-zA-Z0-9]{3,50}$/;
 const CreateVaultPage = () => {
   const [balance] = useBalance()
@@ -27,6 +27,7 @@ const CreateVaultPage = () => {
     symbol: "",
   });
   const [wallet] = useWallet() as any
+
   const [createModal, setCreateModal] = useState(false);
   const [createStatus, setCreateStatus] = useState({
     status: "create",
@@ -37,9 +38,9 @@ const CreateVaultPage = () => {
   const [nameAlreadyExists, setNameAlreadyExists] = useState(false)
   const [tokensPrincipal, setTokensPrincipal] = useState([])
   const [tokens, setTokens] = useState([])
-
   let vault = useRef(null)
 
+  console.log(wallet);
   const approve = async () => {
     let arg: ApproveArgs = {
       fee: [],
@@ -55,12 +56,15 @@ const CreateVaultPage = () => {
       }
     }
     try {
+      console.log('1');
       await icrc_ledger.icrc2_approve(arg)
+      // console.log('2');
       await vault_factory.transfer_icp()
+      // console.log("3");
     } catch (e) {
       console.log(e);
       setCreateStatus({ msg: "Wallet declined the action!", status: "error" })
-      throw Error("CBIndex:Approve Error!")
+      // throw Error("CBIndex:Approve Error!")
     }
   }
   const createVault = async () => {
@@ -78,9 +82,10 @@ const CreateVaultPage = () => {
     };
     vault_factory.create_vault(initArgs, [...tokensPrincipal], [Principal.fromText("uf6dk-hyaaa-aaaaq-qaaaq-cai")], []).then(async (resut: any) => {
       if (resut.Ok) {
-        vault.current = createActor(resut.Ok[0].toString(), {
-          agent: wallet.ic.agent
-        })
+        vault.current = await window.ic.plug.createActor({
+          canisterId: resut.Ok[0].toString(),
+          interfaceFactory: idlFactory,
+        });
         try {
           await vault.current.set_shares_token(Principal.fromText(resut.Ok[1].toString()))
         } catch (e) {
@@ -89,7 +94,6 @@ const CreateVaultPage = () => {
         setCreateStatus({ ...createStatus, status: "success" })
         vault_factory.refund_icp()
       } else {
-        console.log(resut.Err);
         switch (Object.keys(resut.Err)[0]) {
           case "FactoryError":
             switch (Object.keys(resut.Err.FactoryError)[0]) {

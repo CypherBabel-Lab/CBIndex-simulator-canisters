@@ -1,13 +1,13 @@
 import React from "react";
 import { Table, Avatar } from "antd";
-// import icon from "../../../utils/TokenIcon/Icon.json";
-// import { ServerAssetes } from "../../../utils/consts/Consts";
 import classes from "./style.module.less";
 import token from '../../../../utils/tokenInfo/token.json'
-// import { getImageUrl } from '../../../utils/TokenIcon/getIconImage'
-const AssetTable = ({ assetList }: any) => {
-  console.log(assetList);
+import { localePriceNumber } from '../../../../utils/number/localeNumber'
+import ShareImg from '../../../../components/ShareImg/ShareImg'
 
+
+
+const AssetTable = ({ assetList }: any) => {
   const columns = [
     {
       title: "Token",
@@ -30,15 +30,25 @@ const AssetTable = ({ assetList }: any) => {
       dataIndex: "token_id",
       key: "2",
       render: (text) => {
-        return <>{text.toString()}</>
+        return <>{text.toString()}<ShareImg onClick={() => {
+          window.open("https://dashboard.internetcomputer.org/canister/" + text.toString())
+        }} /></>
       }
     },
     {
       title: "Balance",
+      dataIndex: "balance",
+      key: "3",
+      render: (text) => {
+        return <>{text.toFixed(6)}</>
+      }
+    },
+    {
+      title: "AUM",
       dataIndex: "aum",
       key: "3",
       render: (text) => {
-        return <>{text}</>
+        return <>${localePriceNumber(text)} USD</>
       }
     },
   ];
