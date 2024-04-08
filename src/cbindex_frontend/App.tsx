@@ -38,10 +38,8 @@ const client = createClient({
   providers: [provider],
   globalProviderConfig: {
     dev: true,
-    // host: window.location.origin,
   },
 })
-
 function App() {
   return (
 

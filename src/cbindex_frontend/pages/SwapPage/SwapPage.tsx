@@ -19,21 +19,17 @@ const SwapPage = ({ vaultActor, getVaultList, vaultSwapAsstes, setSwapModalOpen,
 
     const confirmTransactionEvt = async (sellToken, buyToken, sellBuyAmount) => {
         setConfirmReturnStatus("loading")
-        console.log(sellToken, buyToken);
         let feeAmount = 0
         await ckbtc_ledger.icrc1_fee().then(d => {
             feeAmount = Number(d) * sellBuyAmount.sell / 100000000
         })
         await vaultActor.approve(Principal.fromText(swapPoolAddress.current.canisterId), Principal.fromText(sellToken.canisterId), BigInt((Number(sellBuyAmount.sell) + feeAmount) * 100000000)).then(d => {
-            // console.log("approve=", d);
-
         })
         await vaultActor.deposit_from(Principal.fromText(swapPoolAddress.current.canisterId), {
             fee: BigInt(0 * 100000000),
             token: sellToken.canisterId,
             amount: BigInt(Number(sellBuyAmount.sell * 100000000)),
         }).then(d => {
-            // console.log("deposit_from=", d);
         })
 
         await vaultActor.swap(
@@ -44,7 +40,6 @@ const SwapPage = ({ vaultActor, getVaultList, vaultSwapAsstes, setSwapModalOpen,
             'zeroForOne': sellToken.canisterId < buyToken.canisterId,
             'amountOutMinimum': "0",
         }).then(d => {
-            console.log("swap=", d);
             if (!d.Ok) {
                 setConfirmReturnStatus("error")
                 return
@@ -54,7 +49,6 @@ const SwapPage = ({ vaultActor, getVaultList, vaultSwapAsstes, setSwapModalOpen,
                 token: buyToken.canisterId,
                 amount: Number(d.Ok.token1_amount * 100000000),
             }).then(d => {
-                console.log(d);
                 getVaultList()
                 setConfirmReturnStatus("success")
             })
@@ -143,8 +137,6 @@ const SwapPage = ({ vaultActor, getVaultList, vaultSwapAsstes, setSwapModalOpen,
             }}
             closeIcon={confirmReturnStatus !== "loading"}
             onCancel={() => {
-                console.log(confirmReturnStatus);
-
                 setConfirmReturnStatus("swap")
                 setSwapModalOpen(false)
             }}

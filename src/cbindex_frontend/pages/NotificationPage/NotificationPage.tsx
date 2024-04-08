@@ -34,7 +34,6 @@ const NotificationPage = () => {
         });
         let list = []
         a.get_records(BigInt(100), []).then(d => {
-            console.log(d);
             for (let i = 0; i < d.result.length; i++) {
                 let tempt = { type: "", key: 0, record: {} as any, time: <></> }
                 if (Object.keys(d.result[i].record)[0] === "Unfollowed") {
@@ -120,9 +119,6 @@ const NotificationPage = () => {
                     borderBottom: "1px solid rgba(253, 253, 253, 0.12)",
                     marginBottom: "25px"
                 }}
-                    onClick={() => {
-                        console.log(it);
-                    }}
                 >
                     <Link to={"/details?vaultAddress=" + it.record.fund}>
                         <div style={{

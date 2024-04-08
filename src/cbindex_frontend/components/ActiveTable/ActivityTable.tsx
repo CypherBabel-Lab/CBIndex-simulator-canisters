@@ -15,8 +15,6 @@ import { localePriceNumber } from "../../utils/number/localeNumber";
  */
 const FormatTime = (props: any) => {
     const { time, show = true } = props;
-    console.log(time);
-
     if (show) {
         return (
             <>
@@ -52,7 +50,6 @@ const ShareImg = ({ onClick }) => {
             cursor: "pointer",
         }}
         onClick={() => {
-            console.log('123');
             onClick()
         }}
     />
@@ -62,7 +59,6 @@ export function splitString(inputString) {
     return s[0] + "..." + s[s.length - 1]
 }
 const ActivityTable = ({ activityList, vaultInfo }: any) => {
-    console.log(activityList);
     const toolTipText = (canister_ids, amounts, eq_usds) => {
         let text = canister_ids.map((item: any, index) => {
             return <div style={{

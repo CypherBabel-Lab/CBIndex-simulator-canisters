@@ -25,8 +25,6 @@ const PcHeadr = () => {
     }
   })
   const [wallet] = useWallet()
-  const [providers] = useProviders()
-  // console.log(wallet);
   return (
     <div className={classes.container}>
       <div className={classes.headerTopLayer}>

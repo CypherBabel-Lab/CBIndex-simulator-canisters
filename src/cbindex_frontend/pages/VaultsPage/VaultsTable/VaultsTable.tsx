@@ -6,20 +6,7 @@ import { Link } from "react-router-dom";
 import Tokenimg from '../../../components/Tokenimg/Tokenimg'
 import truncateString from '../../../utils/Sting/truncateString'
 import shareIcon from '../../../public/icon/share.png'
-import { idlFactory } from '../../../../declarations/vault/index'
 const VaultsTable = ({ dataSource, loading, total, setPage, address }: any) => {
-  const FollowEvt = async (canisterId) => {
-    let vault = await window.ic.plug.createActor({
-      canisterId: canisterId,
-      interfaceFactory: idlFactory,
-    });
-    vault.follow().then(d => {
-      console.log(d);
-    })
-    vault.if_followed().then(d => {
-      console.log(d);
-    })
-  }
   const columns = [
     {
       title: "Fund Name",

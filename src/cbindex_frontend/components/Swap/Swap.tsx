@@ -36,7 +36,6 @@ const ModalTypeContext = createContext(null);
  * @returns Swap组件
  */
 const Swap: React.FC<Props> = ({ supportSellList, supportBuyList, userHoldList, confirmTransactionEvt, calculatePriceFuc, vaultSwapAsstes }) => {
-    console.log(vaultSwapAsstes);
     const [modalOpen, setModalOpen] = useState(false)
     const [modalList, setModalList] = useState([])
     const [modalType, setModalType] = useState("" as ModalType)

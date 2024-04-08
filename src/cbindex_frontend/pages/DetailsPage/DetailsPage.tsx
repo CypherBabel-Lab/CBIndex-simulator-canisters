@@ -166,10 +166,6 @@ const DetailsPage = () => {
   const parser = (value) => {
     return value.replace(/[^\d.]/g, ''); // 去除非数字和小数点
   };
-  const initPrice = (amount: any) => {
-    console.log(amount);
-    return amount
-  }
   const investStatusDom = {
     "invest": <div style={{
       display: "flex",
@@ -464,9 +460,6 @@ const DetailsPage = () => {
     let tempt = { "mxzaz-hqaaa-aaaar-qaada-cai": btc, "ss2fx-dyaaa-aaaar-qacoq-cai": eth, "ryjl3-tyaaa-aaaaa-aaaba-cai": icp }
     setUserBalance(tempt)
   }
-  useEffect(() => {
-    console.log(timeLoading);
-  }, [timeLoading])
   const approve = async () => {
     let arg: ApproveArgs = {
       fee: [],
@@ -502,7 +495,6 @@ const DetailsPage = () => {
     await approve()
     try {
       await vault.current.deposit(Principal.fromText(selectInvestToken), BigInt(investAmount * globalDecimals)).then(d => {
-        console.log(d);
         if (!!d["Err"]) {
           console.log(d["Err"]);
           setInvestModalState({ state: "error", msg: "Invest Error!" })

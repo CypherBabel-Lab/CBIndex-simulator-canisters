@@ -39,8 +39,6 @@ const CreateVaultPage = () => {
   const [tokensPrincipal, setTokensPrincipal] = useState([])
   const [tokens, setTokens] = useState([])
   let vault = useRef(null)
-
-  console.log(wallet);
   const approve = async () => {
     let arg: ApproveArgs = {
       fee: [],
@@ -56,15 +54,11 @@ const CreateVaultPage = () => {
       }
     }
     try {
-      console.log('1');
       await icrc_ledger.icrc2_approve(arg)
-      // console.log('2');
       await vault_factory.transfer_icp()
-      // console.log("3");
     } catch (e) {
       console.log(e);
       setCreateStatus({ msg: "Wallet declined the action!", status: "error" })
-      // throw Error("CBIndex:Approve Error!")
     }
   }
   const createVault = async () => {
@@ -82,7 +76,7 @@ const CreateVaultPage = () => {
     };
     vault_factory.create_vault(initArgs, [...tokensPrincipal], [Principal.fromText("uf6dk-hyaaa-aaaaq-qaaaq-cai")], []).then(async (resut: any) => {
       if (resut.Ok) {
-        vault.current = await window.ic.plug.createActor({
+        vault.current = await (window as any).ic.plug.createActor({
           canisterId: resut.Ok[0].toString(),
           interfaceFactory: idlFactory,
         });
