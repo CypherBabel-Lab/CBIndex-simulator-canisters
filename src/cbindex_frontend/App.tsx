@@ -20,9 +20,9 @@ import SwapPage from "./pages/SwapPage/SwapPage";
 import { BrowserRouter, Navigate } from "react-router-dom";
 import NotificationPage from "./pages/NotificationPage/NotificationPage";
 import * as notification from "../declarations/notification";
-
+import * as cbindex_frontend from '../declarations/cbindex_frontend'
 const provider = new PlugWallet({
-  dev: false,
+  dev: true,
   whitelist: [],
   host: window.location.origin,
 });
@@ -34,6 +34,7 @@ const client = createClient({
     cketh_ledger_canister,
     SwapFactory,
     notification,
+    cbindex_frontend
   },
   providers: [provider],
   globalProviderConfig: {
