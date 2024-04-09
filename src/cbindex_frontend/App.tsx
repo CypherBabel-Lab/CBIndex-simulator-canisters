@@ -22,7 +22,7 @@ import NotificationPage from "./pages/NotificationPage/NotificationPage";
 import * as notification from "../declarations/notification";
 import * as cbindex_frontend from '../declarations/cbindex_frontend'
 const provider = new PlugWallet({
-  dev: true,
+  dev: false,
   whitelist: [],
   host: window.location.origin,
 });
