@@ -4,19 +4,34 @@
       "build": "bash scripts/build_token.sh",
       "candid": "src/candid/token.did",
       "wasm": "target/wasm32-unknown-unknown/release/token.wasm",
-      "type": "custom"
+      "type": "custom",
+      "metadata": [
+        {
+          "name": "candid:service"
+        }
+      ]
     },
     "vault_factory": {
       "build": "bash scripts/build_vault_factory.sh",
       "candid": "src/candid/vault-factory.did",
       "wasm": "target/wasm32-unknown-unknown/release/vault-factory.wasm",
-      "type": "custom"
+      "type": "custom",
+      "metadata": [
+        {
+          "name": "candid:service"
+        }
+      ]
     },
     "vault": {
       "build": "bash scripts/build_vault.sh",
       "candid": "src/candid/vault.did",
       "wasm": "target/wasm32-unknown-unknown/release/vault.wasm",
-      "type": "custom"
+      "type": "custom",
+      "metadata": [
+        {
+          "name": "candid:service"
+        }
+      ]
     },
     "notification": {
       "build": "bash scripts/build_notification.sh",
