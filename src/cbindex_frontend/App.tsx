@@ -1,31 +1,31 @@
-import React, { useEffect } from "react"
-import { createClient } from "@connect2ic/core"
-import { defaultProviders } from "@connect2ic/core/providers"
-import { PlugWallet } from "@connect2ic/core/providers/plug-wallet"
-import { ConnectDialog, Connect2ICProvider } from "@connect2ic/react"
-import "@connect2ic/core/style.css"
-import VaultsPage from './pages/VaultsPage/VaultsPage'
-import * as vault_factory from '../declarations/vault_factory'
-import * as icp_ledger_canister from '../declarations/icp_ledger_canister'
-import * as ckbtc_ledger_canister from '../declarations/ckbtc'
-import * as cketh_ledger_canister from '../declarations/cketh'
-import * as SwapFactory from '../declarations/SwapFactory'
-import * as vault from '../declarations/vault'
+import React, { useEffect } from "react";
+import { createClient } from "@connect2ic/core";
+import { defaultProviders } from "@connect2ic/core/providers";
+import { PlugWallet } from "@connect2ic/core/providers/plug-wallet";
+import { ConnectDialog, Connect2ICProvider } from "@connect2ic/react";
+import "@connect2ic/core/style.css";
+import VaultsPage from "./pages/VaultsPage/VaultsPage";
+import * as vault_factory from "../declarations/vault_factory";
+import * as icp_ledger_canister from "../declarations/icp_ledger_canister";
+import * as ckbtc_ledger_canister from "../declarations/ckbtc";
+import * as cketh_ledger_canister from "../declarations/cketh";
+import * as SwapFactory from "../declarations/SwapFactory";
+import * as vault from "../declarations/vault";
 import { ConfigProvider, theme } from "antd";
-import Layout from "./components/Layout/Layout/Layout"
-import { Routes, Route, } from "react-router-dom"
-import DetailsPage from "./pages/DetailsPage/DetailsPage"
-import CreateActiveFund from "./pages/CreateVaultPage/CreateVaultPage"
-import SwapPage from "./pages/SwapPage/SwapPage"
-import { BrowserRouter, Navigate } from 'react-router-dom';
-import NotificationPage from './pages/NotificationPage/NotificationPage'
-import * as notification from '../declarations/notification'
-
+import Layout from "./components/Layout/Layout/Layout";
+import { Routes, Route } from "react-router-dom";
+import DetailsPage from "./pages/DetailsPage/DetailsPage";
+import CreateActiveFund from "./pages/CreateVaultPage/CreateVaultPage";
+import SwapPage from "./pages/SwapPage/SwapPage";
+import { BrowserRouter, Navigate } from "react-router-dom";
+import NotificationPage from "./pages/NotificationPage/NotificationPage";
+import * as notification from "../declarations/notification";
+import * as cbindex_frontend from '../declarations/cbindex_frontend'
 const provider = new PlugWallet({
-  dev: true,
+  dev: false,
   whitelist: [],
   host: window.location.origin,
-})
+});
 const client = createClient({
   canisters: {
     vault_factory,
@@ -33,28 +33,27 @@ const client = createClient({
     ckbtc_ledger_canister,
     cketh_ledger_canister,
     SwapFactory,
-    notification
+    notification,
+    cbindex_frontend
   },
   providers: [provider],
   globalProviderConfig: {
-    dev: true,
+    dev: false,
   },
-})
+});
 function App() {
   return (
-
     <div className="App">
       <Routes>
         <Route path="/vaults" element={<VaultsPage />}></Route>
-        <Route path="/createactivefund" element={< CreateActiveFund />}></Route>
+        <Route path="/createactivefund" element={<CreateActiveFund />}></Route>
         <Route path="/details" element={<DetailsPage />}></Route>
         <Route path="/notification" element={<NotificationPage />}></Route>
         <Route path="*" element={<Navigate to="/vaults" replace />} />
       </Routes>
       <ConnectDialog />
     </div>
-
-  )
+  );
 }
 
 export default () => (
@@ -80,7 +79,7 @@ export default () => (
               colorBorder: "var(--border-third-color)",
               colorBgContainer: "transparent",
               textHoverBg: "#fff",
-              borderRadius: ("var(--border-radius-lg)" as any),
+              borderRadius: "var(--border-radius-lg)" as any,
             },
 
             Select: {
@@ -100,4 +99,4 @@ export default () => (
       </ConfigProvider>
     </BrowserRouter>
   </Connect2ICProvider>
-)
+);

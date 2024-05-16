@@ -5,6 +5,9 @@
   "icp_ledger_canister": {
     "ic": "ryjl3-tyaaa-aaaaa-aaaba-cai"
   },
+  "notification": {
+    "ic": "dsg3g-jaaaa-aaaam-acina-cai"
+  },
   "vault_factory": {
     "ic": "ypzti-4aaaa-aaaam-ab5ia-cai"
   }
